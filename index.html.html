@@ -1,0 +1,3033 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>先秦至西汉典籍涉水字词统计与共现研究平台</title>
+
+  <!-- Google Fonts: 典雅中文衬线体与无衬线体 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&family=Noto+Serif+SC:wght@500;600;700;900&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            paper: '#FAF8F4',
+            card: '#FFFFFF',
+            indigoInk: '#1F4E5F',
+            indigoLight: '#1F6E7A',
+            cinnabar: '#B85A3A',
+            cinnabarLight: '#C26D4A',
+            slateMist: '#6D7A9E',
+            slateMistLight: '#7B86B2',
+            deepInk: '#1E293B',
+            softBorder: '#E6E1D6',
+            warmMuted: '#F3EFE6'
+          },
+          fontFamily: {
+            serifSC: ['"Noto Serif SC"', '"Songti SC"', '"STSong"', '"SimSun"', 'serif'],
+            sansSC: ['"Noto Sans SC"', '"PingFang SC"', '"Microsoft YaHei"', 'sans-serif']
+          },
+          boxShadow: {
+            scholar: '0 4px 20px -2px rgba(31, 78, 95, 0.06), 0 2px 6px -2px rgba(30, 41, 59, 0.04)',
+            scholarHover: '0 10px 28px -4px rgba(31, 78, 95, 0.11), 0 4px 10px -2px rgba(30, 41, 59, 0.05)'
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <style>
+    /* 宣纸底纹与数字排版基础规范 */
+    body {
+      background-color: #FAF8F4;
+      color: #1E293B;
+      font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background-image: radial-gradient(rgba(31, 78, 95, 0.03) 1px, transparent 0);
+      background-size: 28px 28px;
+    }
+
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* 细腻自定义滚动条 */
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #F3EFE6;
+      border-radius: 999px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #CFC8B8;
+      border-radius: 999px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: #1F4E5F;
+    }
+
+    /* 古籍朱砂印章微质感 */
+    .seal-stamp {
+      writing-mode: vertical-rl;
+      text-orientation: upright;
+      letter-spacing: 0.12em;
+      box-shadow: inset 0 0 0 1.5px rgba(184, 90, 58, 0.85);
+    }
+
+    /* 原文高亮字交互脉冲动画 */
+    @keyframes tokenPulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(184, 90, 58, 0.45); }
+      50% { transform: scale(1.12); box-shadow: 0 0 0 6px rgba(184, 90, 58, 0); }
+    }
+    .token-active {
+      animation: tokenPulse 0.75s ease-in-out 2;
+    }
+
+    /* SVG 交互过渡 */
+    .net-edge {
+      transition: stroke-opacity 0.2s ease, stroke-width 0.2s ease;
+      cursor: pointer;
+    }
+    .net-node {
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body class="antialiased selection:bg-indigoInk/15 selection:text-indigoInk">
+
+  <!-- ==================== 顶部固定导航栏 ==================== -->
+  <header class="sticky top-0 z-40 bg-paper/95 backdrop-blur-md border-b border-softBorder">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16 gap-3">
+        <!-- 品牌标题 -->
+        <a href="#top" class="flex items-center gap-3 min-w-0 group">
+          <div class="w-9 h-9 rounded-lg bg-indigoInk text-paper flex items-center justify-center font-serifSC font-bold text-lg shadow-sm group-hover:bg-indigoLight transition-colors shrink-0">
+            水
+          </div>
+          <div class="min-w-0">
+            <div class="font-serifSC font-bold text-sm sm:text-base text-indigoInk truncate tracking-wide">
+              先秦至西汉典籍涉水字词研究平台
+            </div>
+            <div class="text-[11px] text-slate-500 hidden sm:block truncate">
+              中文数字人文课程展示 · 语料判读 / 频率比较 / 共现网络
+            </div>
+          </div>
+        </a>
+
+        <!-- 四大模块导航锚点 -->
+        <nav class="hidden lg:flex items-center gap-1 bg-warmMuted/70 p-1 rounded-xl border border-softBorder/80">
+          <a href="#module-corpus" class="nav-link px-3.5 py-1.5 rounded-lg text-sm font-medium text-deepInk hover:bg-white hover:text-indigoInk transition-all">
+            原文与判读
+          </a>
+          <a href="#module-freq" class="nav-link px-3.5 py-1.5 rounded-lg text-sm font-medium text-deepInk hover:bg-white hover:text-indigoInk transition-all">
+            逐书频率比较
+          </a>
+          <a href="#module-network" class="nav-link px-3.5 py-1.5 rounded-lg text-sm font-medium text-deepInk hover:bg-white hover:text-indigoInk transition-all">
+            共现网络探索
+          </a>
+          <a href="#module-findings" class="nav-link px-3.5 py-1.5 rounded-lg text-sm font-medium text-deepInk hover:bg-white hover:text-indigoInk transition-all">
+            研究发现与团队
+          </a>
+        </nav>
+
+        <!-- 右侧操作按钮：导入本地 CSV -->
+        <div class="flex items-center gap-2 shrink-0">
+          <span id="dataSourceBadge" class="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-indigoInk/10 text-indigoInk border border-indigoInk/20">
+            <span class="w-1.5 h-1.5 rounded-full bg-indigoInk"></span>
+            内置真实样本
+          </span>
+          <button id="openCsvModalBtn" type="button"
+            class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigoInk hover:bg-indigoLight text-white text-xs sm:text-sm font-medium shadow-sm transition-all active:scale-[0.98]">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+            </svg>
+            <span>导入本地 CSV</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 平板/移动端模块快捷导航栏 -->
+      <div class="flex lg:hidden items-center gap-1.5 overflow-x-auto pb-2.5 pt-0.5 custom-scroll">
+        <a href="#module-corpus" class="shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium bg-white border border-softBorder text-indigoInk">原文与判读</a>
+        <a href="#module-freq" class="shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium bg-white border border-softBorder text-deepInk">逐书频率比较</a>
+        <a href="#module-network" class="shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium bg-white border border-softBorder text-deepInk">共现网络探索</a>
+        <a href="#module-findings" class="shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium bg-white border border-softBorder text-deepInk">研究发现与团队</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="top" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-12">
+
+    <!-- ==================== HERO 封面与研究团队署名 ==================== -->
+    <section class="relative overflow-hidden rounded-3xl bg-card border border-softBorder shadow-scholar p-6 sm:p-10">
+      <!-- 装饰性宣纸双线角标与印章 -->
+      <div class="absolute top-0 right-0 w-72 h-72 bg-gradient-to-bl from-indigoInk/[0.05] via-cinnabar/[0.03] to-transparent pointer-events-none rounded-bl-full"></div>
+      <div class="hidden md:flex items-center justify-center seal-stamp absolute top-7 right-8 w-10 h-24 rounded-md border-2 border-cinnabar/80 text-cinnabar font-serifSC font-bold text-sm select-none opacity-85">
+        涉水考据
+      </div>
+
+      <div class="relative z-10 max-w-4xl">
+        <div class="inline-flex flex-wrap items-center gap-2 mb-4">
+          <span class="px-3 py-1 rounded-full text-xs font-medium bg-indigoInk/10 text-indigoInk border border-indigoInk/15">
+            中文数字人文课程研究项目
+          </span>
+          <span class="px-3 py-1 rounded-full text-xs font-medium bg-cinnabar/10 text-cinnabar border border-cinnabar/15">
+            先秦至西汉七部传世典籍
+          </span>
+          <span class="px-3 py-1 rounded-full text-xs font-medium bg-slateMist/10 text-slateMist border border-slateMist/20">
+            语境人工判读 × 统计口径分层
+          </span>
+        </div>
+
+        <h1 class="font-serifSC text-2xl sm:text-4xl lg:text-[2.6rem] font-bold text-deepInk leading-tight tracking-tight">
+          先秦至西汉典籍涉水字词<br class="sm:hidden"/>统计与共现研究平台
+        </h1>
+
+        <p class="mt-4 text-sm sm:text-base text-slate-600 leading-relaxed max-w-3xl">
+          本平台基于《论语》《老子》《庄子内篇》《孟子》《荀子》《韩非子》《春秋繁露》七部典籍共
+          <span class="font-semibold text-indigoInk tabular-nums">309,989</span> 正文汉字，以「段落编号」贯通原文段落与候选涉水字人工判读，
+          区分<span class="text-indigoInk font-medium">核心水域/水物口径</span>、<span class="text-cinnabar font-medium">自然水象口径</span>与<span class="text-slateMist font-medium">含五行哲学口径</span>，
+          并结合逐书频次对比与二分共现网络，立体呈现先秦至西汉“水”意象的学派分化与历史转向。
+        </p>
+
+        <!-- 小组成员署名栏（Hero 醒目呈现） -->
+        <div class="mt-6 pt-5 border-t border-softBorder/90">
+          <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+            <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-indigoInk shrink-0">
+              <svg class="w-4 h-4 text-cinnabar" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+              <span>小组成员署名</span>
+            </div>
+            <div class="grid grid-cols-2 sm:flex sm:flex-wrap gap-2.5">
+              <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-paper border border-softBorder text-sm">
+                <span class="font-serifSC font-bold text-deepInk">方正</span>
+                <span class="text-xs text-slate-500 font-mono tabular-nums">26059694g</span>
+              </div>
+              <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-paper border border-softBorder text-sm">
+                <span class="font-serifSC font-bold text-deepInk">林法宗</span>
+                <span class="text-xs text-slate-500 font-mono tabular-nums">26045028g</span>
+              </div>
+              <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-paper border border-softBorder text-sm">
+                <span class="font-serifSC font-bold text-deepInk">高玮泽</span>
+                <span class="text-xs text-slate-500 font-mono tabular-nums">26132049g</span>
+              </div>
+              <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-paper border border-softBorder text-sm">
+                <span class="font-serifSC font-bold text-deepInk">陈静颐</span>
+                <span class="text-xs text-slate-500 font-mono tabular-nums">26113605g</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 核心总览 KPI 指标卡片 -->
+      <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- KPI 1 -->
+        <div class="rounded-2xl bg-paper/85 border border-softBorder p-4 sm:p-5 hover:border-indigoInk/35 transition-colors">
+          <div class="flex items-center justify-between text-xs text-slate-500 font-medium">
+            <span>收录传世典籍</span>
+            <span class="px-2 py-0.5 rounded-md bg-indigoInk/10 text-indigoInk">儒 · 道 · 法</span>
+          </div>
+          <div class="mt-2 flex items-baseline gap-1.5">
+            <span id="kpiBooks" class="font-serifSC text-3xl font-bold text-indigoInk tabular-nums">7</span>
+            <span class="text-sm text-slate-600">部</span>
+          </div>
+          <p class="mt-2 text-xs text-slate-500 leading-relaxed">
+            《论语》《老子》《庄子内篇》《孟子》《荀子》《韩非子》《春秋繁露》
+          </p>
+        </div>
+
+        <!-- KPI 2 -->
+        <div class="rounded-2xl bg-paper/85 border border-softBorder p-4 sm:p-5 hover:border-indigoInk/35 transition-colors">
+          <div class="flex items-center justify-between text-xs text-slate-500 font-medium">
+            <span>语料总规模</span>
+            <span class="px-2 py-0.5 rounded-md bg-warmMuted text-slate-600">段落表.csv</span>
+          </div>
+          <div class="mt-2 flex items-baseline gap-1.5">
+            <span id="kpiChars" class="font-serifSC text-3xl font-bold text-deepInk tabular-nums">309,989</span>
+            <span class="text-sm text-slate-600">字</span>
+          </div>
+          <p class="mt-2 text-xs text-slate-500 tabular-nums">
+            共切分 <span id="kpiParagraphs" class="font-semibold text-deepInk">2,487</span> 个独立段落，覆盖春秋末至西汉
+          </p>
+        </div>
+
+        <!-- KPI 3 -->
+        <div class="rounded-2xl bg-paper/85 border border-softBorder p-4 sm:p-5 hover:border-cinnabar/40 transition-colors">
+          <div class="flex items-center justify-between text-xs text-slate-500 font-medium">
+            <span>涉水候选字位</span>
+            <span class="px-2 py-0.5 rounded-md bg-cinnabar/10 text-cinnabar">三口径分层</span>
+          </div>
+          <div class="mt-2 flex items-baseline gap-1.5">
+            <span id="kpiCandidates" class="font-serifSC text-3xl font-bold text-cinnabar tabular-nums">3,170</span>
+            <span class="text-sm text-slate-600">例</span>
+          </div>
+          <div class="mt-2 flex flex-wrap gap-1.5 text-[11px] tabular-nums">
+            <span class="px-1.5 py-0.5 rounded bg-indigoInk/10 text-indigoInk font-medium">核心 <span id="kpiCore">988</span></span>
+            <span class="px-1.5 py-0.5 rounded bg-cinnabar/10 text-cinnabar font-medium">自然水象 <span id="kpiNature">1,207</span></span>
+            <span class="px-1.5 py-0.5 rounded bg-slateMist/15 text-slateMist font-medium">含五行 <span id="kpiWuxing">1,265</span></span>
+          </div>
+        </div>
+
+        <!-- KPI 4 -->
+        <div class="rounded-2xl bg-paper/85 border border-softBorder p-4 sm:p-5 hover:border-indigoInk/35 transition-colors">
+          <div class="flex items-center justify-between text-xs text-slate-500 font-medium">
+            <span>核心高频涉水字</span>
+            <span class="px-2 py-0.5 rounded-md bg-slateMist/15 text-slateMist">Top 5</span>
+          </div>
+          <div class="mt-2.5 flex flex-wrap gap-1.5">
+            <button type="button" onclick="jumpToCorpusWithChar('水')" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigoInk text-white text-xs font-medium hover:bg-indigoLight transition-colors tabular-nums">
+              <span class="font-serifSC text-sm">水</span><span class="opacity-85">210</span>
+            </button>
+            <button type="button" onclick="jumpToCorpusWithChar('海')" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-cinnabar text-white text-xs font-medium hover:opacity-90 transition-opacity tabular-nums">
+              <span class="font-serifSC text-sm">海</span><span class="opacity-85">52</span>
+            </button>
+            <button type="button" onclick="jumpToCorpusWithChar('池')" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slateMist text-white text-xs font-medium hover:opacity-90 transition-opacity tabular-nums">
+              <span class="font-serifSC text-sm">池</span><span class="opacity-85">39</span>
+            </button>
+            <button type="button" onclick="jumpToCorpusWithChar('流')" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-warmMuted border border-softBorder text-deepInk text-xs font-medium hover:border-indigoInk transition-colors tabular-nums">
+              <span class="font-serifSC text-sm">流</span><span class="text-slate-500">36</span>
+            </button>
+            <button type="button" onclick="jumpToCorpusWithChar('河')" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-warmMuted border border-softBorder text-deepInk text-xs font-medium hover:border-indigoInk transition-colors tabular-nums">
+              <span class="font-serifSC text-sm">河</span><span class="text-slate-500">33</span>
+            </button>
+          </div>
+          <p class="mt-2 text-[11px] text-slate-500">点击高频字可直达原文用例筛选</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 模块一：原文段落与候选字判读 ==================== -->
+    <section id="module-corpus" class="scroll-mt-24 space-y-5">
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-3">
+        <div>
+          <div class="flex items-center gap-2 text-xs font-semibold tracking-wider text-cinnabar uppercase">
+            <span>Module 01</span>
+            <span>·</span>
+            <span>段落表.csv ⋈ 原文用例索引.csv</span>
+          </div>
+          <h2 class="mt-1 font-serifSC text-2xl sm:text-3xl font-bold text-deepInk">
+            原文段落与候选字判读
+          </h2>
+          <p class="mt-1 text-sm text-slate-600">
+            按「段落编号」实时联结原文与人工语义判读。点击正文中的高亮目标字，可联动聚焦右侧判读条目与入选/排除理由。
+          </p>
+        </div>
+
+        <!-- 醒目核心统计口径切换开关 -->
+        <label class="inline-flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-card border-2 border-indigoInk/25 shadow-sm cursor-pointer select-none hover:border-indigoInk transition-colors self-start md:self-auto">
+          <div class="relative">
+            <input id="coreOnlyToggle" type="checkbox" class="sr-only peer" />
+            <div class="w-11 h-6 bg-slate-300 rounded-full peer peer-checked:bg-indigoInk transition-colors"></div>
+            <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5"></div>
+          </div>
+          <div>
+            <div class="text-xs sm:text-sm font-semibold text-indigoInk leading-tight">
+              仅展示计入核心统计（计入核心 = 1）
+            </div>
+            <div id="coreOnlyHint" class="text-[11px] text-slate-500">
+              当前：展示全部候选字（含排除、冰雪、降水、五行等）
+            </div>
+          </div>
+        </label>
+      </div>
+
+      <!-- 筛选控制栏 -->
+      <div class="rounded-2xl bg-card border border-softBorder shadow-scholar p-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-end">
+          <!-- 书名筛选 -->
+          <div class="lg:col-span-2">
+            <label for="filterBook" class="block text-xs font-medium text-slate-500 mb-1">典籍书名</label>
+            <select id="filterBook" class="w-full rounded-xl border border-softBorder bg-paper px-3 py-2 text-sm text-deepInk focus:outline-none focus:ring-2 focus:ring-indigoInk/30 focus:border-indigoInk">
+              <option value="全部">全部典籍</option>
+            </select>
+          </div>
+
+          <!-- 学派筛选 -->
+          <div class="lg:col-span-2">
+            <label for="filterSchool" class="block text-xs font-medium text-slate-500 mb-1">思想学派</label>
+            <select id="filterSchool" class="w-full rounded-xl border border-softBorder bg-paper px-3 py-2 text-sm text-deepInk focus:outline-none focus:ring-2 focus:ring-indigoInk/30 focus:border-indigoInk">
+              <option value="全部">全部学派</option>
+            </select>
+          </div>
+
+          <!-- 时期筛选 -->
+          <div class="lg:col-span-3">
+            <label for="filterPeriod" class="block text-xs font-medium text-slate-500 mb-1">成书时期</label>
+            <select id="filterPeriod" class="w-full rounded-xl border border-softBorder bg-paper px-3 py-2 text-sm text-deepInk focus:outline-none focus:ring-2 focus:ring-indigoInk/30 focus:border-indigoInk">
+              <option value="全部">全部时期</option>
+            </select>
+          </div>
+
+          <!-- 关键词搜索 -->
+          <div class="lg:col-span-4">
+            <label for="filterKeyword" class="block text-xs font-medium text-slate-500 mb-1">关键词检索（正文 / 篇名 / 段落编号 / 目标字）</label>
+            <div class="relative">
+              <input id="filterKeyword" type="text" placeholder="例如：渊、津、沧浪、求雨、LY-L00339..."
+                class="w-full rounded-xl border border-softBorder bg-paper pl-9 pr-8 py-2 text-sm text-deepInk placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigoInk/30 focus:border-indigoInk" />
+              <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/>
+              </svg>
+              <button id="clearKeywordBtn" type="button" title="清除关键词" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-deepInk">
+                ✕
+              </button>
+            </div>
+          </div>
+
+          <!-- 重置按钮 -->
+          <div class="lg:col-span-1">
+            <button id="resetCorpusFiltersBtn" type="button"
+              class="w-full py-2 px-3 rounded-xl border border-softBorder bg-warmMuted/70 hover:bg-warmMuted text-xs font-medium text-slate-700 transition-colors">
+              重置
+            </button>
+          </div>
+        </div>
+
+        <!-- 图例与当前命中数 -->
+        <div class="mt-3 pt-3 border-t border-softBorder/70 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+          <div class="flex flex-wrap items-center gap-3">
+            <span class="font-medium text-slate-600">高亮色例：</span>
+            <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-indigoInk"></span>核心 (计入核心=1)</span>
+            <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-sky-600"></span>冰雪/降水/凝结 (自然水象)</span>
+            <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-slateMist"></span>五行</span>
+            <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-amber-600"></span>旱情/待辨</span>
+            <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-cinnabar/60"></span>排除</span>
+          </div>
+          <div class="tabular-nums">
+            命中 <span id="corpusMatchCount" class="font-semibold text-indigoInk">0</span> 段（共展示 <span id="corpusCaseCount" class="font-semibold text-cinnabar">0</span> 例候选字位）
+          </div>
+        </div>
+      </div>
+
+      <!-- 左右分栏主体 -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        <!-- 左侧：段落列表 -->
+        <div class="lg:col-span-4 rounded-2xl bg-card border border-softBorder shadow-scholar overflow-hidden flex flex-col">
+          <div class="px-4 py-3 bg-warmMuted/60 border-b border-softBorder flex items-center justify-between">
+            <span class="text-xs font-semibold text-indigoInk">典籍段落索引</span>
+            <span id="listStatusText" class="text-[11px] text-slate-500 tabular-nums"></span>
+          </div>
+          <div id="paragraphList" class="divide-y divide-softBorder/70 max-h-[600px] overflow-y-auto custom-scroll">
+            <!-- 动态渲染段落列表 -->
+          </div>
+          <div id="loadMoreWrap" class="hidden p-3 bg-paper border-t border-softBorder text-center">
+            <button id="loadMoreBtn" type="button" class="px-4 py-1.5 rounded-lg bg-white border border-softBorder text-xs font-medium text-indigoInk hover:bg-warmMuted transition-colors">
+              加载更多段落
+            </button>
+          </div>
+        </div>
+
+        <!-- 右侧：当前段落详情 + 候选字判读面板 -->
+        <div class="lg:col-span-8 space-y-5">
+          <!-- 原文卡片 -->
+          <div id="paragraphDetailCard" class="rounded-2xl bg-card border border-softBorder shadow-scholar p-5 sm:p-7">
+            <!-- 动态渲染原文与高亮 -->
+          </div>
+
+          <!-- 判读详情列表 -->
+          <div class="rounded-2xl bg-card border border-softBorder shadow-scholar overflow-hidden">
+            <div class="px-5 py-3.5 bg-warmMuted/60 border-b border-softBorder flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <h3 class="font-serifSC font-bold text-base text-deepInk">候选字位人工判读明细</h3>
+                <span id="detailCasesBadge" class="px-2 py-0.5 rounded-full text-xs font-medium bg-indigoInk/10 text-indigoInk tabular-nums">0 例</span>
+              </div>
+              <span class="text-xs text-slate-500">点击条目可反向定位正文汉字位</span>
+            </div>
+            <div id="annotationList" class="divide-y divide-softBorder/70 max-h-[420px] overflow-y-auto custom-scroll">
+              <!-- 动态渲染判读卡片 -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 模块二：逐书统计比较与发现 ==================== -->
+    <section id="module-freq" class="scroll-mt-24 space-y-6">
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-3">
+        <div>
+          <div class="flex items-center gap-2 text-xs font-semibold tracking-wider text-cinnabar uppercase">
+            <span>Module 02</span>
+            <span>·</span>
+            <span>逐书频率.csv</span>
+          </div>
+          <h2 class="mt-1 font-serifSC text-2xl sm:text-3xl font-bold text-deepInk">
+            逐书涉水频率与语义构成比较
+          </h2>
+          <p class="mt-1 text-sm text-slate-600">
+            对比七部典籍在不同统计口径下的每万字涉水密度与核心语义结构，揭示战国中期高峰与西汉五行转向。
+          </p>
+        </div>
+      </div>
+
+      <!-- 双交互图表区域 -->
+      <div class="grid grid-cols-1 xl:grid-cols-12 gap-5">
+        <!-- 图表 1：每万字频率对比 -->
+        <div class="xl:col-span-7 rounded-2xl bg-card border border-softBorder shadow-scholar p-5 sm:p-6 flex flex-col">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            <div>
+              <h3 class="font-serifSC font-bold text-lg text-deepInk">各书每万字涉水频率对比</h3>
+              <p class="text-xs text-slate-500 mt-0.5">可自由勾选切换不同统计口径（单位：次 / 万正文汉字）</p>
+            </div>
+            <!-- 口径切换按钮组 -->
+            <div class="flex flex-wrap gap-1.5" id="freqMetricToggles">
+              <button type="button" data-metric="core" class="freq-toggle active px-2.5 py-1.5 rounded-lg text-xs font-medium border border-indigoInk bg-indigoInk text-white transition-all">
+                核心口径
+              </button>
+              <button type="button" data-metric="nature" class="freq-toggle active px-2.5 py-1.5 rounded-lg text-xs font-medium border border-cinnabar bg-cinnabar text-white transition-all">
+                自然水象
+              </button>
+              <button type="button" data-metric="wuxing" class="freq-toggle active px-2.5 py-1.5 rounded-lg text-xs font-medium border border-slateMist bg-slateMist text-white transition-all">
+                含五行
+              </button>
+            </div>
+          </div>
+
+          <div class="relative h-[320px] sm:h-[350px] w-full">
+            <canvas id="bookFreqChart"></canvas>
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-softBorder/70 text-xs text-slate-600 bg-paper/70 rounded-xl p-3 leading-relaxed">
+            <span class="font-semibold text-indigoInk">数据观察：</span>
+            《庄子内篇》（64.63/万字）与《孟子》（59.93/万字）在战国中期形成显著的涉水意象双高峰；而《春秋繁露》核心频率仅 21.85/万字，一旦纳入降水/冰雪（41.14）与五行（51.04），频率跃升逾一倍，凸显汉代天人灾异与五行学说对“水”的重构。
+          </div>
+        </div>
+
+        <!-- 图表 2：语义类别分布堆叠条形图 -->
+        <div class="xl:col-span-5 rounded-2xl bg-card border border-softBorder shadow-scholar p-5 sm:p-6 flex flex-col">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+            <div>
+              <h3 class="font-serifSC font-bold text-lg text-deepInk">核心用例语义类别结构</h3>
+              <p class="text-xs text-slate-500 mt-0.5">五大核心语义子类在各书中的分布对比</p>
+            </div>
+            <div class="inline-flex rounded-lg border border-softBorder bg-paper p-0.5 self-start sm:self-auto">
+              <button type="button" id="semModeCount" class="px-2.5 py-1 rounded-md text-xs font-medium bg-indigoInk text-white transition-colors">例数</button>
+              <button type="button" id="semModePct" class="px-2.5 py-1 rounded-md text-xs font-medium text-slate-600 hover:text-indigoInk transition-colors">占比%</button>
+            </div>
+          </div>
+
+          <div class="relative h-[320px] sm:h-[350px] w-full">
+            <canvas id="semanticStackChart"></canvas>
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-softBorder/70 text-xs text-slate-600 bg-paper/70 rounded-xl p-3 leading-relaxed">
+            <span class="font-semibold text-cinnabar">结构特征：</span>
+            《韩非子》“涉水动作”高达 75 例（占其核心用例 26.2%，如灌、饮、溺、游），显著高于其余诸书；《荀子》（34 例）与《孟子》（31 例）则在水体运动（流、洪、洚等）上尤为发达。
+          </div>
+        </div>
+      </div>
+
+      <!-- 可排序逐书频率对比表 -->
+      <div class="rounded-2xl bg-card border border-softBorder shadow-scholar overflow-hidden">
+        <div class="px-5 py-4 bg-warmMuted/60 border-b border-softBorder flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 class="font-serifSC font-bold text-base sm:text-lg text-deepInk">七部典籍逐书频率与高频核心字总表</h3>
+            <p class="text-xs text-slate-500">点击任意数值列标题即可升降排序；点击书名可直接筛选该书原文用例</p>
+          </div>
+          <span class="text-xs text-slate-500 font-mono">单位：次 / 每万字</span>
+        </div>
+
+        <div class="overflow-x-auto custom-scroll">
+          <table class="w-full text-left border-collapse min-w-[960px]">
+            <thead>
+              <tr class="bg-paper border-b border-softBorder text-xs font-semibold text-slate-600 select-none">
+                <th class="py-3 px-4 cursor-pointer hover:text-indigoInk" data-sort="书名">书名 ⇅</th>
+                <th class="py-3 px-3">学派 / 时期</th>
+                <th class="py-3 px-3 text-right cursor-pointer hover:text-indigoInk" data-sort="段落数">段落数 ⇅</th>
+                <th class="py-3 px-3 text-right cursor-pointer hover:text-indigoInk" data-sort="正文汉字数">正文汉字 ⇅</th>
+                <th class="py-3 px-3 text-right cursor-pointer hover:text-indigoInk" data-sort="候选总次数">候选例数 ⇅</th>
+                <th class="py-3 px-3 text-right cursor-pointer hover:text-indigoInk" data-sort="核心次数">核心例数 ⇅</th>
+                <th class="py-3 px-3 text-right cursor-pointer hover:text-indigoInk" data-sort="核心每万字">核心/万字 ⇅</th>
+                <th class="py-3 px-3 text-right cursor-pointer hover:text-indigoInk" data-sort="自然水象每万字">自然水象/万字 ⇅</th>
+                <th class="py-3 px-3 text-right cursor-pointer hover:text-indigoInk" data-sort="含五行每万字">含五行/万字 ⇅</th>
+                <th class="py-3 px-3 text-right cursor-pointer hover:text-indigoInk" data-sort="核心入选率">核心入选率 ⇅</th>
+                <th class="py-3 px-4">高频核心字</th>
+              </tr>
+            </thead>
+            <tbody id="bookFreqTableBody" class="divide-y divide-softBorder/70 text-sm tabular-nums">
+              <!-- 动态渲染 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 模块三：涉水字与邻字共现网络 ==================== -->
+    <section id="module-network" class="scroll-mt-24 space-y-6">
+      <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2 text-xs font-semibold tracking-wider text-cinnabar uppercase">
+            <span>Module 03</span>
+            <span>·</span>
+            <span>共现边表.csv & 核心共现网络复刻</span>
+          </div>
+          <h2 class="mt-1 font-serifSC text-2xl sm:text-3xl font-bold text-deepInk">
+            涉水字与邻字共现网络探索
+          </h2>
+          <p class="mt-1 text-sm text-slate-600">
+            核心口径下中心字前后五个正文汉字内的共现关系，连线粗细随共现次数缩放。点击任意中心字、邻字或连线查看左右共现分布并直达原文。
+          </p>
+        </div>
+
+        <!-- 维度与视图切换 -->
+        <div class="flex flex-wrap items-center gap-2">
+          <!-- 分组维度 -->
+          <div class="inline-flex rounded-xl bg-card border border-softBorder p-1 shadow-sm">
+            <button type="button" id="dimSchoolBtn" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium bg-indigoInk text-white transition-all">
+              按学派分组
+            </button>
+            <button type="button" id="dimPeriodBtn" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium text-slate-600 hover:text-indigoInk transition-all">
+              按时期分组
+            </button>
+          </div>
+
+          <!-- 视图模式 -->
+          <div class="inline-flex rounded-xl bg-card border border-softBorder p-1 shadow-sm">
+            <button type="button" id="netModeCoreBtn" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium bg-cinnabar text-white transition-all">
+              核心精简（Top3）
+            </button>
+            <button type="button" id="netModeFullBtn" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium text-slate-600 hover:text-cinnabar transition-all">
+              扩展全量（Top15）
+            </button>
+            <button type="button" id="netModeGalleryBtn" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium text-slate-600 hover:text-indigoInk transition-all">
+              多组总览图
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 组别切换胶囊栏（单组交互模式下显示） -->
+      <div id="networkGroupPills" class="flex flex-wrap gap-2">
+        <!-- 动态渲染学派/时期胶囊 -->
+      </div>
+
+      <!-- 视图 A：单组大型可点击二分网络 + 详情面板 -->
+      <div id="networkSingleView" class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+        <!-- 左侧：可点击二分网络 SVG 画布 -->
+        <div class="lg:col-span-7 rounded-2xl bg-card border border-softBorder shadow-scholar p-5 sm:p-6 flex flex-col">
+          <div class="flex flex-wrap items-start justify-between gap-2 pb-4 border-b border-softBorder/70">
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 id="netGroupTitle" class="font-serifSC text-xl font-bold text-deepInk">儒</h3>
+                <span id="netGroupBooks" class="text-xs text-slate-500">论语、孟子、荀子、春秋繁露</span>
+              </div>
+              <p id="netGroupMeta" class="text-xs text-slate-500 mt-1 tabular-nums">184,968 正文字 · 598 个目标字位</p>
+            </div>
+            <button id="clearNetSelectionBtn" type="button" class="hidden px-2.5 py-1 rounded-lg bg-warmMuted text-xs text-slate-700 hover:bg-softBorder transition-colors">
+              取消高亮
+            </button>
+          </div>
+
+          <div class="mt-3 flex items-center justify-between text-[11px] text-slate-500">
+            <span>← 左侧：核心涉水中心字（附出现次数）</span>
+            <span>右侧：前后五字高频共现邻字 →</span>
+          </div>
+
+          <!-- 交互 SVG 容器 -->
+          <div id="bipartiteSvgContainer" class="mt-2 flex-1 min-h-[370px] flex items-center justify-center overflow-x-auto">
+            <!-- 动态生成清晰 SVG 二分网络 -->
+          </div>
+        </div>
+
+        <!-- 右侧：共现边详情面板 & 该组边表 -->
+        <div class="lg:col-span-5 flex flex-col gap-5">
+          <!-- 选中边详情卡片 -->
+          <div id="edgeInspectorCard" class="rounded-2xl bg-card border border-softBorder shadow-scholar p-5">
+            <!-- 动态渲染 -->
+          </div>
+
+          <!-- 当前组完整边表 -->
+          <div class="rounded-2xl bg-card border border-softBorder shadow-scholar overflow-hidden flex-1 flex flex-col">
+            <div class="px-4 py-3 bg-warmMuted/60 border-b border-softBorder flex items-center justify-between">
+              <span class="text-xs font-semibold text-indigoInk">当前分组共现边表（点击行聚焦网络）</span>
+              <span id="edgeTableCount" class="text-[11px] text-slate-500 tabular-nums"></span>
+            </div>
+            <div class="overflow-y-auto max-h-[260px] custom-scroll">
+              <table class="w-full text-left text-xs tabular-nums">
+                <thead class="bg-paper sticky top-0 border-b border-softBorder text-slate-500">
+                  <tr>
+                    <th class="py-2 px-3">中心字</th>
+                    <th class="py-2 px-2">邻字</th>
+                    <th class="py-2 px-2 text-right">左侧</th>
+                    <th class="py-2 px-2 text-right">右侧</th>
+                    <th class="py-2 px-3 text-right">总计</th>
+                  </tr>
+                </thead>
+                <tbody id="edgeTableBody" class="divide-y divide-softBorder/60">
+                  <!-- 动态渲染 -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 视图 B：复刻两张核心图的多组并列总览（Small Multiples） -->
+      <div id="networkGalleryView" class="hidden space-y-4">
+        <div class="rounded-2xl bg-card border border-softBorder shadow-scholar p-5 sm:p-6">
+          <div class="mb-5 pb-3 border-b border-softBorder flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 id="galleryTitle" class="font-serifSC text-xl font-bold text-deepInk">
+                涉水字与邻字的共现 ｜ 按学派分组（核心图复刻）
+              </h3>
+              <p class="text-xs text-slate-500 mt-1">
+                核心口径。左侧数字为中心字出现次数，每条连线表示前后五个正文汉字内的共现，次数越多线越粗。点击任意子图可进入交互深探。
+              </p>
+            </div>
+          </div>
+          <div id="networkGalleryGrid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- 动态渲染各组复刻子图 -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 模块四：组员分析解读、研究发现与数据管线 ==================== -->
+    <section id="module-findings" class="scroll-mt-24 space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+        <div>
+          <div class="flex items-center gap-2 text-xs font-semibold tracking-wider text-cinnabar uppercase">
+            <span>Module 04</span>
+            <span>·</span>
+            <span>Research Findings & Pipeline</span>
+          </div>
+          <h2 class="mt-1 font-serifSC text-2xl sm:text-3xl font-bold text-deepInk">
+            组员分析解读与核心研究发现
+          </h2>
+          <p class="mt-1 text-sm text-slate-600">
+            结合量化统计与文本细读归纳四项主要结论；支持在课程答辩现场轻量编辑补充解读文字。
+          </p>
+        </div>
+
+        <!-- 轻量编辑切换按钮 -->
+        <div class="flex items-center gap-2 self-start sm:self-auto">
+          <button id="toggleEditFindingsBtn" type="button"
+            class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-softBorder bg-card hover:border-indigoInk text-xs sm:text-sm font-medium text-indigoInk shadow-sm transition-all">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+            </svg>
+            <span id="editBtnLabel">编辑 / 补充组员解读</span>
+          </button>
+          <button id="resetFindingsBtn" type="button"
+            class="hidden px-3 py-2 rounded-xl border border-softBorder bg-warmMuted text-xs font-medium text-slate-600 hover:text-cinnabar transition-colors">
+            恢复默认文案
+          </button>
+        </div>
+      </div>
+
+      <!-- 四项核心研究发现卡片 -->
+      <div id="findingsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <!-- 动态渲染，支持编辑保存 -->
+      </div>
+
+      <!-- 网页数据架构与教程对照卡片 -->
+      <div class="rounded-2xl bg-card border border-softBorder shadow-scholar p-5 sm:p-7">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-5">
+          <div>
+            <h3 class="font-serifSC font-bold text-lg text-deepInk">网页数据架构与建站管线对照</h3>
+            <p class="text-xs text-slate-500 mt-0.5">严格遵循课程建站教程的数据关联逻辑，四张核心 CSV 表均可直接通过右上角「导入本地 CSV」实时接入</p>
+          </div>
+          <span class="px-2.5 py-1 rounded-lg bg-indigoInk/10 text-indigoInk text-xs font-medium">纯前端零依赖 · 浏览器端实时联表</span>
+        </div>
+
+        <!-- 流程图管线 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-stretch">
+          <div class="rounded-xl bg-paper border border-softBorder p-3.5 relative">
+            <div class="text-[11px] font-mono text-cinnabar font-semibold">STEP 01</div>
+            <div class="mt-1 font-serifSC font-bold text-sm text-indigoInk">段落表.csv</div>
+            <p class="mt-1.5 text-xs text-slate-600 leading-relaxed">
+              读取书名、篇名、学派、时期与完整古籍正文，构建段落基础索引。
+            </p>
+          </div>
+
+          <div class="rounded-xl bg-paper border border-softBorder p-3.5 flex flex-col justify-between">
+            <div>
+              <div class="text-[11px] font-mono text-cinnabar font-semibold">STEP 02</div>
+              <div class="mt-1 font-serifSC font-bold text-sm text-indigoInk">按「段落编号」联结</div>
+              <p class="mt-1.5 text-xs text-slate-600 leading-relaxed">
+                以主键 <code class="px-1 py-0.5 rounded bg-warmMuted text-[11px]">段落编号</code> 建立一对多映射，精准定位段内汉字位。
+              </p>
+            </div>
+          </div>
+
+          <div class="rounded-xl bg-paper border border-indigoInk/30 p-3.5">
+            <div class="text-[11px] font-mono text-cinnabar font-semibold">STEP 03</div>
+            <div class="mt-1 font-serifSC font-bold text-sm text-indigoInk">原文用例索引.csv</div>
+            <p class="mt-1.5 text-xs text-slate-600 leading-relaxed">
+              展示候选字与判读理由；筛选 <code class="px-1 py-0.5 rounded bg-indigoInk/10 text-indigoInk font-semibold text-[11px]">计入核心=1</code> 过滤噪声。
+            </p>
+          </div>
+
+          <div class="rounded-xl bg-paper border border-softBorder p-3.5">
+            <div class="text-[11px] font-mono text-cinnabar font-semibold">STEP 04</div>
+            <div class="mt-1 font-serifSC font-bold text-sm text-indigoInk">逐书频率.csv</div>
+            <p class="mt-1.5 text-xs text-slate-600 leading-relaxed">
+              驱动三口径每万字频率柱状图、语义堆叠图与可排序典籍总表。
+            </p>
+          </div>
+
+          <div class="rounded-xl bg-paper border border-softBorder p-3.5">
+            <div class="text-[11px] font-mono text-cinnabar font-semibold">STEP 05</div>
+            <div class="mt-1 font-serifSC font-bold text-sm text-indigoInk">共现边表.csv</div>
+            <p class="mt-1.5 text-xs text-slate-600 leading-relaxed">
+              复刻两张静态核心图并升级为可点击二分网络，支持左右共现检索与原文联动。
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ==================== 页脚与小组成员署名 ==================== -->
+  <footer class="mt-14 border-t border-softBorder bg-card">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div>
+          <div class="font-serifSC font-bold text-lg text-indigoInk">
+            先秦至西汉典籍涉水字词统计与共现研究平台
+          </div>
+          <p class="text-xs text-slate-500 mt-1">
+            中文数字人文课程展示平台 · 数据驱动古籍细读与语义网络可视化
+          </p>
+        </div>
+
+        <div class="w-full md:w-auto">
+          <div class="text-xs font-semibold text-slate-500 mb-2 md:text-right">研究小组成员与学号</div>
+          <div class="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+            <span class="inline-flex items-center justify-between sm:justify-start gap-2 px-3 py-1.5 rounded-xl bg-paper border border-softBorder text-xs">
+              <strong class="font-serifSC text-deepInk text-sm">方正</strong>
+              <span class="font-mono text-slate-500 tabular-nums">26059694g</span>
+            </span>
+            <span class="inline-flex items-center justify-between sm:justify-start gap-2 px-3 py-1.5 rounded-xl bg-paper border border-softBorder text-xs">
+              <strong class="font-serifSC text-deepInk text-sm">林法宗</strong>
+              <span class="font-mono text-slate-500 tabular-nums">26045028g</span>
+            </span>
+            <span class="inline-flex items-center justify-between sm:justify-start gap-2 px-3 py-1.5 rounded-xl bg-paper border border-softBorder text-xs">
+              <strong class="font-serifSC text-deepInk text-sm">高玮泽</strong>
+              <span class="font-mono text-slate-500 tabular-nums">26132049g</span>
+            </span>
+            <span class="inline-flex items-center justify-between sm:justify-start gap-2 px-3 py-1.5 rounded-xl bg-paper border border-softBorder text-xs">
+              <strong class="font-serifSC text-deepInk text-sm">陈静颐</strong>
+              <span class="font-mono text-slate-500 tabular-nums">26113605g</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ==================== 导入本地 CSV 弹窗 ==================== -->
+  <div id="csvModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-deepInk/45 backdrop-blur-xs">
+    <div class="w-full max-w-2xl rounded-3xl bg-card border border-softBorder shadow-2xl overflow-hidden">
+      <div class="px-6 py-4 bg-warmMuted/70 border-b border-softBorder flex items-center justify-between">
+        <div>
+          <h3 class="font-serifSC font-bold text-lg text-indigoInk">导入本地 CSV 数据表</h3>
+          <p class="text-xs text-slate-500 mt-0.5">在浏览器本地实时解析，无需上传服务器，自动识别四类研究数据表</p>
+        </div>
+        <button id="closeCsvModalBtn" type="button" class="w-8 h-8 rounded-full hover:bg-softBorder/60 flex items-center justify-center text-slate-500 hover:text-deepInk">
+          ✕
+        </button>
+      </div>
+
+      <div class="p-6 space-y-5">
+        <!-- 拖拽/点击上传区域 -->
+        <div id="csvDropZone" class="rounded-2xl border-2 border-dashed border-indigoInk/30 bg-paper/80 hover:bg-indigoInk/[0.04] hover:border-indigoInk p-7 text-center transition-all cursor-pointer">
+          <input id="csvFileInput" type="file" accept=".csv,text/csv" multiple class="hidden" />
+          <div class="w-12 h-12 mx-auto rounded-2xl bg-indigoInk/10 text-indigoInk flex items-center justify-center mb-3">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+            </svg>
+          </div>
+          <div class="text-sm font-semibold text-deepInk">拖拽 CSV 文件到此处，或点击选择多个文件</div>
+          <p class="text-xs text-slate-500 mt-1.5">
+            支持同时导入：<code class="px-1.5 py-0.5 bg-white rounded border border-softBorder">段落表.csv</code>
+            <code class="px-1.5 py-0.5 bg-white rounded border border-softBorder">原文用例索引.csv</code>
+            <code class="px-1.5 py-0.5 bg-white rounded border border-softBorder">逐书频率.csv</code>
+            <code class="px-1.5 py-0.5 bg-white rounded border border-softBorder">共现边表.csv</code>
+          </p>
+        </div>
+
+        <!-- 四表加载状态 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          <div id="status-paragraphs" class="p-3 rounded-xl bg-paper border border-softBorder flex items-center justify-between">
+            <span class="font-medium text-deepInk">段落表.csv</span>
+            <span class="text-slate-500">内置样本 (16 段)</span>
+          </div>
+          <div id="status-cases" class="p-3 rounded-xl bg-paper border border-softBorder flex items-center justify-between">
+            <span class="font-medium text-deepInk">原文用例索引.csv</span>
+            <span class="text-slate-500">内置样本 (56 例)</span>
+          </div>
+          <div id="status-freq" class="p-3 rounded-xl bg-paper border border-softBorder flex items-center justify-between">
+            <span class="font-medium text-deepInk">逐书频率.csv</span>
+            <span class="text-slate-500">内置完整数据 (7 书)</span>
+          </div>
+          <div id="status-edges" class="p-3 rounded-xl bg-paper border border-softBorder flex items-center justify-between">
+            <span class="font-medium text-deepInk">共现边表.csv</span>
+            <span class="text-slate-500">内置完整网络 (8 组)</span>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-softBorder">
+          <button id="restoreBuiltInBtn" type="button" class="px-4 py-2 rounded-xl border border-softBorder bg-warmMuted hover:bg-softBorder/70 text-xs font-medium text-deepInk transition-colors">
+            恢复全部内置演示数据
+          </button>
+          <button id="confirmCsvModalBtn" type="button" class="px-5 py-2 rounded-xl bg-indigoInk hover:bg-indigoLight text-white text-xs sm:text-sm font-medium transition-colors">
+            完成并返回浏览
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 轻量消息提示 Toast ==================== -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- ==================== 核心交互逻辑脚本 ==================== -->
+  <script>
+    'use strict';
+
+    /* =====================================================================
+       一、内置真实研究数据（严格对照 段落表、原文用例索引、逐书频率、共现边表）
+       ===================================================================== */
+
+    const BUILT_IN_PARAGRAPHS = [
+      {
+        id: "LY-L00969-W01", 书名: "论语", 篇名: "微子第十八", 学派: "儒", 时期: "春秋末至战国初",
+        正文: "长沮、桀溺耦而耕，孔子过之，使子路问津焉。长沮曰：“夫执舆者为谁？”子路曰：“为孔丘。”曰：“是鲁孔丘与？”曰：“是也。”曰：“是知津矣。”问于桀溺，桀溺曰：“子为谁？”曰：“为仲由。”曰：“是鲁孔丘之徒与？”对曰：“然。”曰：“滔滔者天下皆是也，而谁以易之？且而与其从辟人之士也，岂若从辟世之士哉？”耰而不辍。子路行以告。夫子怃然曰：“鸟兽不可与同群，吾非斯人之徒与而谁与？天下有道，丘不与易也。”",
+        用例: [
+          { 目标字: "沮", 统计类别: "排除", 语义类别: "人名", 理由: "长沮、冯沮或沮卫为人名，不指沮水。", 计入核心: 0, 计入自然水象: 0, 计入含五行: 0, 段内汉字位: 2 },
+          { 目标字: "溺", 统计类别: "排除", 语义类别: "人名", 理由: "桀溺为人物称谓，并非溺水。", 计入核心: 0, 计入自然水象: 0, 计入含五行: 0, 段内汉字位: 4 },
+          { 目标字: "津", 统计类别: "核心", 语义类别: "水域", 理由: "津指可过水的渡口；津泽为水边水域的并称。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 16 },
+          { 目标字: "津", 统计类别: "核心", 语义类别: "水域", 理由: "津指可过水的渡口；津泽为水边水域的并称。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 45 },
+          { 目标字: "滔", 统计类别: "排除", 语义类别: "抽象义", 理由: "滔在此指天下纷乱之势，目标字未指水中运动。", 计入核心: 0, 计入自然水象: 0, 计入含五行: 0, 段内汉字位: 73 }
+        ]
+      },
+      {
+        id: "LY-L00339-W01", 书名: "论语", 篇名: "述而第七", 学派: "儒", 时期: "春秋末至战国初",
+        正文: "子曰：“饭疏食饮水，曲肱而枕之，乐亦在其中矣。不义而富且贵，于我如浮云。”",
+        用例: [
+          { 目标字: "饮", 统计类别: "核心", 语义类别: "涉水动作", 理由: "原句直接说饮水，虽用来论安贫或节用，动作宾语仍是水。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 6 },
+          { 目标字: "水", 统计类别: "核心", 语义类别: "水物", 理由: "指水本身、水域或水灾，包含以真实水性、用水行为作喻的用例。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 7 },
+          { 目标字: "浮", 统计类别: "排除", 语义类别: "非目标义", 理由: "浮云指云团，并非水面浮动；云团未纳入本次水域/用水范围。", 计入核心: 0, 计入自然水象: 0, 计入含五行: 0, 段内汉字位: 28 }
+        ]
+      },
+      {
+        id: "LY-L00391-W01", 书名: "论语", 篇名: "泰伯第八", 学派: "儒", 时期: "春秋末至战国初",
+        正文: "曾子有疾，召门弟子曰：“启予足！启予手！诗云‘战战兢兢，如临深渊，如履薄冰。’而今而后，吾知免夫！小子！”",
+        用例: [
+          { 目标字: "深", 统计类别: "核心", 语义类别: "水域", 理由: "如临深渊以深水潭作警惧喻体，深仍直接修饰渊。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 24 },
+          { 目标字: "渊", 统计类别: "核心", 语义类别: "水域", 理由: "渊指深水、深潭；以水潭作喻体保留水域义。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 25 },
+          { 目标字: "冰", 统计类别: "冰雪", 语义类别: "冰雪", 理由: "冰指冰体、结冰或以冰体作比；另列水的固态。", 计入核心: 0, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 29 }
+        ]
+      },
+      {
+        id: "LY-L00015-W01", 书名: "论语", 篇名: "学而第一", 学派: "儒", 时期: "春秋末至战国初",
+        正文: "子曰：“弟子入则孝，出则弟，谨而信，泛爱众，而亲仁。行有馀力，则以学文。”",
+        用例: [
+          { 目标字: "泛", 统计类别: "排除", 语义类别: "抽象义", 理由: "泛爱指广泛爱人，不指水流。", 计入核心: 0, 计入自然水象: 0, 计入含五行: 0, 段内汉字位: 14 }
+        ]
+      },
+      {
+        id: "LZ-L00267-L00270-W01", 书名: "老子", 篇名: "三十二章", 学派: "道", 时期: "战国（成书年代有争议）",
+        正文: "道常无名，朴虽小，天下莫能臣也。侯王若能守之，万物将自宾。天地相合，以降甘露，民莫之令而自均。始制有名，名亦既有，夫亦将知止，知止所以不殆。譬道之在天下，犹川谷之于江海。",
+        用例: [
+          { 目标字: "露", 统计类别: "凝结", 语义类别: "凝结", 理由: "甘露指露水凝结现象，归入凝结类，不计入核心水域统计。", 计入核心: 0, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 32 },
+          { 目标字: "川", 统计类别: "核心", 语义类别: "水域", 理由: "川谷之于江海以真实河川百谷喻道，保留水域义。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 65 },
+          { 目标字: "江", 统计类别: "核心", 语义类别: "水域", 理由: "江指大河水域，作为喻体仍保留实际水域义。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 69 },
+          { 目标字: "海", 统计类别: "核心", 语义类别: "水域", 理由: "指海域、海水；作为喻体仍保留水域义。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 70 }
+        ]
+      },
+      {
+        id: "LZ-L00106-L00111-W01", 书名: "老子", 篇名: "十五章", 学派: "道", 时期: "战国（成书年代有争议）",
+        正文: "古之善为士者，微妙玄通，深不可识。夫唯不可识，故强为之容。豫焉若冬涉川，犹兮若畏四邻，俨兮其若客，涣兮若冰之将释，敦兮其若朴，旷兮其若谷，混兮其若浊。",
+        用例: [
+          { 目标字: "深", 统计类别: "排除", 语义类别: "抽象义", 理由: "深不可识指道行幽微难测，非水之深度。", 计入核心: 0, 计入自然水象: 0, 计入含五行: 0, 段内汉字位: 11 },
+          { 目标字: "涉", 统计类别: "核心", 语义类别: "涉水动作", 理由: "冬涉川为实际徒步渡河动作喻体，计入核心。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 31 },
+          { 目标字: "川", 统计类别: "核心", 语义类别: "水域", 理由: "川指冬日河川，保留水域义。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 32 },
+          { 目标字: "冰", 统计类别: "冰雪", 语义类别: "冰雪", 理由: "冰之将释指冰体消融，归入冰雪类（自然水象）。", 计入核心: 0, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 48 }
+        ]
+      },
+      {
+        id: "ZZ-L01090-W01", 书名: "庄子内篇", 篇名: "内篇应帝王第七", 学派: "道", 时期: "战国中期",
+        正文: "鲵桓之审为渊，止水之审为渊，流水之审为渊。渊有九名，此处三焉。",
+        用例: [
+          { 目标字: "渊", 统计类别: "核心", 语义类别: "水域", 理由: "渊指水盘旋深聚之处，保留水域义。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 6 },
+          { 目标字: "水", 统计类别: "核心", 语义类别: "水物", 理由: "止水指静止的水体本身。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 8 },
+          { 目标字: "渊", 统计类别: "核心", 语义类别: "水域", 理由: "止水之审为渊，指深潭水域。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 12 },
+          { 目标字: "流", 统计类别: "核心", 语义类别: "水体运动", 理由: "流水直接修饰水的流动状态。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 13 },
+          { 目标字: "水", 统计类别: "核心", 语义类别: "水物", 理由: "流水指流动的水体。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 14 }
+        ]
+      },
+      {
+        id: "ZZ-L00285-W01", 书名: "庄子内篇", 篇名: "内篇齐物论第二", 学派: "道", 时期: "战国中期",
+        正文: "大泽焚而不能热，河汉沍而不能寒，疾雷破山风振海而不能惊。",
+        用例: [
+          { 目标字: "泽", 统计类别: "核心", 语义类别: "水域", 理由: "大泽指广阔的湖泽水域。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 2 },
+          { 目标字: "河", 统计类别: "核心", 语义类别: "水域", 理由: "河汉指黄河、汉水等大川水域。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 8 },
+          { 目标字: "汉", 统计类别: "核心", 语义类别: "水域", 理由: "汉指汉水，与河并举为大河水域。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 9 },
+          { 目标字: "沍", 统计类别: "冰雪", 语义类别: "冰雪", 理由: "沍指江河封冻凝闭，归入冰雪类。", 计入核心: 0, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 10 },
+          { 目标字: "海", 统计类别: "核心", 语义类别: "水域", 理由: "风振海指大风震荡海域。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 22 }
+        ]
+      },
+      {
+        id: "MZ-L00153-W01", 书名: "孟子", 篇名: "离娄章句上", 学派: "儒", 时期: "战国中期",
+        正文: "有孺子歌曰：“沧浪之水清兮，可以濯我缨；沧浪之水浊兮，可以濯我足。”孔子曰：“小子听之！清斯濯缨，浊斯濯足矣，自取之也。”",
+        用例: [
+          { 目标字: "沧", 统计类别: "核心", 语义类别: "水域", 理由: "沧浪为水名，指青苍水域。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 6 },
+          { 目标字: "水", 统计类别: "核心", 语义类别: "水物", 理由: "沧浪之水直接指河水本体。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 9 },
+          { 目标字: "清", 统计类别: "核心", 语义类别: "水物", 理由: "清直接形容水体清澈的物理性状。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 10 },
+          { 目标字: "濯", 统计类别: "核心", 语义类别: "涉水动作", 理由: "濯缨、濯足为实际以水洗涤动作。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 14 },
+          { 目标字: "浊", 统计类别: "核心", 语义类别: "水物", 理由: "浊直接形容水体浑浊的性状。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 22 }
+        ]
+      },
+      {
+        id: "MZ-L00367-W01", 书名: "孟子", 篇名: "告子章句下", 学派: "儒", 时期: "战国中期",
+        正文: "白圭曰：“丹之治水也愈于禹。”孟子曰：“子过矣。禹之治水，水之道也。是故禹以四海为壑，今吾子以邻国为壑。水逆行谓之洚水，洚水者，洪水也，仁人之所恶也。吾子过矣。”",
+        用例: [
+          { 目标字: "水", 统计类别: "核心", 语义类别: "水物", 理由: "治水指治理洪水与水系，计入核心水物。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 7 },
+          { 目标字: "海", 统计类别: "核心", 语义类别: "水域", 理由: "四海为壑指以大海为水流归宿水域。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 30 },
+          { 目标字: "壑", 统计类别: "核心", 语义类别: "水域", 理由: "壑指受水之深谷沟壑，与治水直接相关。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 32 },
+          { 目标字: "洚", 统计类别: "核心", 语义类别: "水体运动", 理由: "洚水指逆行泛滥的洪水。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 48 },
+          { 目标字: "洪", 统计类别: "核心", 语义类别: "水体运动", 理由: "洪水指大水泛滥。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 54 }
+        ]
+      },
+      {
+        id: "XZ-L00091-W04", 书名: "荀子", 篇名: "天论篇第十七", 学派: "儒", 时期: "战国末",
+        正文: "水行者表深，表不明则陷；治民者表道，表不明则乱。礼者，表也；非礼，昏世也；昏世，大乱也。故道无不明，外内异表，隐显有常，民陷乃去。",
+        用例: [
+          { 目标字: "水", 统计类别: "核心", 语义类别: "水物", 理由: "水行者指涉水而行之人，以真实涉水行为作喻。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 1 },
+          { 目标字: "深", 统计类别: "核心", 语义类别: "水域", 理由: "水行者表深以标示水深防陷，深是行水时标注的实际水深。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 5 }
+        ]
+      },
+      {
+        id: "XZ-L00075-W02", 书名: "荀子", 篇名: "致仕篇第十四", 学派: "儒", 时期: "战国末",
+        正文: "水深则回，树落则粪本，弟子通利则思师。书曰：义刑义杀，勿庸以即汝，惟曰未有顺事，言先教也。",
+        用例: [
+          { 目标字: "水", 统计类别: "核心", 语义类别: "水物", 理由: "水深则回直接言水体物理特性，以水作喻仍计入核心。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 1 },
+          { 目标字: "深", 统计类别: "核心", 语义类别: "水域", 理由: "水深则回直接说水深，后比弟子与师，不改变喻体水义。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 2 },
+          { 目标字: "汝", 统计类别: "排除", 语义类别: "非目标义", 理由: "第二人称“你”，用于对话称谓，并非汝水。", 计入核心: 0, 计入自然水象: 0, 计入含五行: 0, 段内汉字位: 29 }
+        ]
+      },
+      {
+        id: "HF-L00223-W01", 书名: "韩非子", 篇名: "说林上第二十二", 学派: "法", 时期: "战国末",
+        正文: "鲁穆公使众公子或宦于晋，或宦于荆。犁鉏曰：“假人于越而救溺子，越人虽善游，子必不生矣；失火而取水于海，海水虽多，火必不灭矣，远水不救近火也。”",
+        用例: [
+          { 目标字: "溺", 统计类别: "核心", 语义类别: "涉水动作", 理由: "救溺子指救助落水溺水之人。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 24 },
+          { 目标字: "游", 统计类别: "核心", 语义类别: "涉水动作", 理由: "越人善游指实际游泳泅水能力。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 30 },
+          { 目标字: "水", 统计类别: "核心", 语义类别: "水物", 理由: "取水于海、远水不救近火均指灭火用水。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 40 },
+          { 目标字: "海", 统计类别: "核心", 语义类别: "水域", 理由: "取水于海指辽远海域。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 42 }
+        ]
+      },
+      {
+        id: "HF-L00655-W01", 书名: "韩非子", 篇名: "外储说左上第三十二", 学派: "法", 时期: "战国末",
+        正文: "虞庆为屋，谓匠人曰：“屋太尊。”匠人对曰：“此新屋也，涂濡而椽生。”虞庆曰：“不然。夫涂濡重而生椽挠，以挠椽任重涂，此宜卑。今涂干而椽燥，则屋必益尊。”",
+        用例: [
+          { 目标字: "涂", 统计类别: "核心", 语义类别: "水物", 理由: "涂濡指含水湿润的泥浆涂饰，与水湿状态相关。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 22 },
+          { 目标字: "濡", 统计类别: "核心", 语义类别: "水物", 理由: "濡指潮湿含水，修饰泥涂含水状态。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 23 }
+        ]
+      },
+      {
+        id: "CQ-L00351-W01", 书名: "春秋繁露", 篇名: "五行逆顺第六十", 学派: "儒（汉代）", 时期: "西汉",
+        正文: "水者，冬藏至阴也，宗庙祭祀之始。敬四时之祭，禘祫昭穆之序……若不敬宗庙，则水不润下，泉源枯竭，流民失所。",
+        用例: [
+          { 目标字: "水", 统计类别: "五行", 语义类别: "五行", 理由: "水者冬藏至阴属五行哲学概念，归入五行类，不计入核心自然水域统计。", 计入核心: 0, 计入自然水象: 0, 计入含五行: 1, 段内汉字位: 1 },
+          { 目标字: "泉", 统计类别: "核心", 语义类别: "水物", 理由: "泉源指地下涌出的实际泉水。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 40 },
+          { 目标字: "流", 统计类别: "排除", 语义类别: "非目标义", 理由: "流民指流亡离散的百姓，非水流运动。", 计入核心: 0, 计入自然水象: 0, 计入含五行: 0, 段内汉字位: 44 }
+        ]
+      },
+      {
+        id: "CQ-L00425-W03", 书名: "春秋繁露", 篇名: "求雨第七十四", 学派: "儒（汉代）", 时期: "西汉",
+        正文: "尺老者六人皆斋三日，衣黑衣而舞之，尉亦斋三日，服黑衣而立之。虾蟆池如春，四时皆以水为龙，必取洁土为之，结盖，龙成而发之。大旱求雨，祭于深渊。",
+        用例: [
+          { 目标字: "池", 统计类别: "核心", 语义类别: "水域", 理由: "虾蟆池指求雨仪式中所设水池。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 29 },
+          { 目标字: "水", 统计类别: "核心", 语义类别: "水物", 理由: "以水为龙指实际用水塑形或祭水。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 37 },
+          { 目标字: "旱", 统计类别: "旱情", 语义类别: "旱情", 理由: "大旱指干旱灾情，单列旱情类，不计入核心。", 计入核心: 0, 计入自然水象: 0, 计入含五行: 0, 段内汉字位: 56 },
+          { 目标字: "雨", 统计类别: "降水", 语义类别: "降水", 理由: "求雨指大气降水，归入降水类（计入自然水象，不计入核心）。", 计入核心: 0, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 58 },
+          { 目标字: "渊", 统计类别: "核心", 语义类别: "水域", 理由: "深渊指实际深水祭祀场所。", 计入核心: 1, 计入自然水象: 1, 计入含五行: 1, 段内汉字位: 62 }
+        ]
+      }
+    ];
+
+    const BUILT_IN_BOOK_FREQ = [
+      {
+        书名: "论语", 学派: "儒", 时期: "春秋末至战国初", 段落数: 500, 正文汉字数: 15917,
+        候选总次数: 111, 核心次数: 32, 自然水象: 33, 含五行: 33,
+        核心每万字: 20.10, 自然水象每万字: 20.73, 含五行每万字: 20.73, 核心入选率: 28.8,
+        语义分布: { 水域: 19, 水物: 5, 涉水动作: 7, 水体运动: 1, 水域设施: 0 },
+        高频核心字: "水(4)、川(2)、沟(2)、饮(2)、津(2)"
+      },
+      {
+        书名: "老子", 学派: "道", 时期: "战国（成书年代有争议）", 段落数: 81, 正文汉字数: 5297,
+        候选总次数: 53, 核心次数: 15, 自然水象: 19, 含五行: 19,
+        核心每万字: 28.32, 自然水象每万字: 35.87, 含五行每万字: 35.87, 核心入选率: 28.3,
+        语义分布: { 水域: 9, 水物: 3, 涉水动作: 1, 水体运动: 2, 水域设施: 0 },
+        高频核心字: "水(3)、海(3)、川(2)、江(2)"
+      },
+      {
+        书名: "庄子内篇", 学派: "道", 时期: "战国中期", 段落数: 738, 正文汉字数: 13771,
+        候选总次数: 247, 核心次数: 89, 自然水象: 100, 含五行: 100,
+        核心每万字: 64.63, 自然水象每万字: 72.62, 含五行每万字: 72.62, 核心入选率: 36.0,
+        语义分布: { 水域: 39, 水物: 21, 涉水动作: 16, 水体运动: 13, 水域设施: 0 },
+        高频核心字: "水(18)、海(6)、冥(5)、渊(5)、泽(5)"
+      },
+      {
+        书名: "孟子", 学派: "儒", 时期: "战国中期", 段落数: 271, 正文汉字数: 35377,
+        候选总次数: 431, 核心次数: 212, 自然水象: 231, 含五行: 231,
+        核心每万字: 59.93, 自然水象每万字: 65.30, 含五行每万字: 65.30, 核心入选率: 49.2,
+        语义分布: { 水域: 85, 水物: 60, 涉水动作: 35, 水体运动: 31, 水域设施: 1 },
+        高频核心字: "水(46)、海(17)、流(10)、池(7)、濯(7)"
+      },
+      {
+        书名: "荀子", 学派: "儒", 时期: "战国末", 段落数: 172, 正文汉字数: 75093,
+        候选总次数: 767, 核心次数: 226, 自然水象: 265, 含五行: 265,
+        核心每万字: 30.10, 自然水象每万字: 35.29, 含五行每万字: 35.29, 核心入选率: 29.5,
+        语义分布: { 水域: 89, 水物: 77, 涉水动作: 26, 水体运动: 34, 水域设施: 0 },
+        高频核心字: "水(50)、流(15)、渊(11)、河(10)、江(10)"
+      },
+      {
+        书名: "韩非子", 学派: "法", 时期: "战国末", 段落数: 538, 正文汉字数: 105953,
+        候选总次数: 899, 核心次数: 286, 自然水象: 318, 含五行: 318,
+        核心每万字: 26.99, 自然水象每万字: 30.01, 含五行每万字: 30.01, 核心入选率: 31.8,
+        语义分布: { 水域: 113, 水物: 79, 涉水动作: 75, 水体运动: 19, 水域设施: 0 },
+        高频核心字: "水(58)、池(18)、海(17)、泽(12)、灌(11)"
+      },
+      {
+        书名: "春秋繁露", 学派: "儒（汉代）", 时期: "西汉", 段落数: 187, 正文汉字数: 58581,
+        候选总次数: 662, 核心次数: 128, 自然水象: 241, 含五行: 299,
+        核心每万字: 21.85, 自然水象每万字: 41.14, 含五行每万字: 51.04, 核心入选率: 19.3,
+        语义分布: { 水域: 55, 水物: 42, 涉水动作: 16, 水体运动: 13, 水域设施: 2 },
+        高频核心字: "水(31)、川(11)、池(7)、深(5)、井(4)"
+      }
+    ];
+
+    const BUILT_IN_NETWORK = {
+      school: [
+        {
+          name: "儒",
+          books: "论语、孟子、荀子、春秋繁露",
+          meta: "184,968 正文字 · 598 个目标字位",
+          centerCounts: { "水": 131, "流": 29, "海": 26 },
+          coreTop3Centers: ["水", "流", "海"],
+          // 核心精简图中的精确连线（复刻 学派共现网络_核心.png）
+          coreEdges: [
+            ["水", "之", 29, 29, 58], ["水", "也", 28, 31, 59], ["水", "水", 24, 24, 48],
+            ["流", "之", 7, 8, 15], ["流", "水", 7, 6, 13], ["流", "则", 4, 6, 10],
+            ["海", "之", 6, 12, 18], ["海", "而", 5, 8, 13], ["海", "于", 4, 7, 11]
+          ],
+          edges: [
+            ["水", "也", 28, 31, 59], ["水", "之", 29, 29, 58], ["水", "水", 24, 24, 48],
+            ["水", "者", 17, 16, 33], ["水", "于", 20, 13, 33], ["水", "而", 12, 19, 31],
+            ["水", "则", 8, 19, 27], ["水", "火", 4, 16, 20], ["海", "之", 6, 12, 18],
+            ["流", "之", 7, 8, 15], ["水", "人", 10, 5, 15], ["流", "水", 7, 6, 13],
+            ["海", "而", 5, 8, 13], ["海", "于", 4, 7, 11], ["流", "则", 4, 6, 10]
+          ]
+        },
+        {
+          name: "道",
+          books: "老子、庄子内篇",
+          meta: "19,068 正文字 · 104 个目标字位",
+          centerCounts: { "水": 21, "海": 9, "渊": 6, "冥": 5 },
+          coreTop3Centers: ["水", "海", "渊"],
+          coreEdges: [
+            ["水", "之", 3, 9, 12], ["水", "于", 5, 2, 7], ["水", "水", 3, 3, 6],
+            ["海", "之", 3, 2, 5], ["海", "为", 2, 2, 4], ["海", "也", 2, 2, 4],
+            ["渊", "之", 4, 3, 7], ["渊", "为", 5, 2, 7], ["渊", "审", 4, 2, 6]
+          ],
+          edges: [
+            ["水", "之", 3, 9, 12], ["渊", "为", 5, 2, 7], ["渊", "之", 4, 3, 7],
+            ["水", "于", 5, 2, 7], ["水", "水", 3, 3, 6], ["渊", "审", 4, 2, 6],
+            ["海", "之", 3, 2, 5], ["水", "止", 2, 3, 5], ["水", "渊", 2, 3, 5],
+            ["冥", "南", 4, 1, 5], ["海", "为", 2, 2, 4], ["海", "也", 2, 2, 4]
+          ]
+        },
+        {
+          name: "法",
+          books: "韩非子",
+          meta: "105,953 正文字 · 286 个目标字位",
+          centerCounts: { "水": 58, "池": 18, "海": 17, "饮": 12, "灌": 11, "溺": 9, "决": 8 },
+          coreTop3Centers: ["水", "池", "海"],
+          coreEdges: [
+            ["水", "之", 13, 21, 34], ["水", "而", 10, 13, 23], ["水", "以", 12, 10, 22],
+            ["池", "以", 4, 4, 8], ["池", "圃", 10, 0, 10], ["池", "为", 3, 4, 7],
+            ["海", "之", 4, 5, 9], ["海", "以", 3, 5, 8], ["海", "于", 4, 4, 8]
+          ],
+          edges: [
+            ["水", "之", 13, 21, 34], ["水", "而", 10, 13, 23], ["水", "以", 12, 10, 22],
+            ["水", "也", 4, 9, 13], ["饮", "之", 3, 9, 12], ["灌", "之", 5, 6, 11],
+            ["池", "圃", 10, 0, 10], ["海", "之", 4, 5, 9], ["溺", "人", 5, 4, 9],
+            ["池", "以", 4, 4, 8], ["海", "以", 3, 5, 8], ["海", "于", 4, 4, 8],
+            ["决", "之", 2, 6, 8], ["池", "为", 3, 4, 7]
+          ]
+        }
+      ],
+      period: [
+        {
+          name: "春秋末至战国初",
+          books: "论语",
+          meta: "15,917 正文字 · 32 个目标字位",
+          centerCounts: { "水": 4, "川": 2, "沟": 2, "深": 2, "渊": 2 },
+          coreTop3Centers: ["水", "川", "沟"],
+          coreEdges: [
+            ["水", "火", 1, 3, 4], ["水", "于", 3, 0, 3], ["水", "乐", 1, 1, 2],
+            ["川", "上", 0, 2, 2], ["川", "其", 1, 1, 2], ["川", "勿", 1, 1, 2],
+            ["沟", "而", 1, 1, 2], ["沟", "之", 1, 1, 2], ["沟", "乎", 0, 2, 2]
+          ],
+          edges: [
+            ["水", "火", 1, 3, 4], ["水", "于", 3, 0, 3], ["水", "乐", 1, 1, 2],
+            ["川", "上", 0, 2, 2], ["川", "其", 1, 1, 2], ["川", "勿", 1, 1, 2],
+            ["沟", "而", 1, 1, 2], ["沟", "之", 1, 1, 2], ["沟", "乎", 0, 2, 2],
+            ["深", "如", 1, 1, 2], ["渊", "如", 1, 1, 2]
+          ]
+        },
+        {
+          name: "战国（成书年代有争议）",
+          books: "老子",
+          meta: "5,297 正文字 · 15 个目标字位",
+          centerCounts: { "水": 3, "海": 3, "川": 2, "流": 1 },
+          coreTop3Centers: ["水", "海", "川"],
+          coreEdges: [
+            ["水", "善", 2, 2, 4], ["水", "万", 1, 1, 2], ["水", "上", 2, 0, 2],
+            ["海", "若", 1, 1, 2], ["海", "兮", 1, 1, 2], ["海", "江", 2, 0, 2],
+            ["川", "若", 1, 1, 2], ["川", "之", 1, 1, 2], ["川", "犹", 1, 1, 2]
+          ],
+          edges: [
+            ["水", "善", 2, 2, 4], ["水", "万", 1, 1, 2], ["水", "上", 2, 0, 2],
+            ["海", "若", 1, 1, 2], ["海", "兮", 1, 1, 2], ["海", "江", 2, 0, 2],
+            ["川", "若", 1, 1, 2], ["川", "之", 1, 1, 2], ["川", "犹", 1, 1, 2],
+            ["流", "下", 1, 1, 2]
+          ]
+        },
+        {
+          name: "战国中期",
+          books: "庄子内篇、孟子",
+          meta: "49,148 正文字 · 301 个目标字位",
+          centerCounts: { "水": 64, "海": 23, "流": 13 },
+          coreTop3Centers: ["水", "海", "流"],
+          coreEdges: [
+            ["水", "之", 19, 25, 44], ["水", "水", 14, 14, 28], ["水", "也", 10, 17, 27],
+            ["海", "之", 5, 11, 16], ["海", "而", 3, 6, 9], ["海", "于", 4, 5, 9],
+            ["流", "之", 5, 4, 9], ["流", "水", 4, 4, 8], ["流", "为", 3, 4, 7]
+          ],
+          edges: [
+            ["水", "之", 19, 25, 44], ["水", "水", 14, 14, 28], ["水", "也", 10, 17, 27],
+            ["水", "于", 9, 11, 20], ["海", "之", 5, 11, 16], ["水", "火", 5, 9, 14],
+            ["水", "洚", 8, 3, 11], ["海", "而", 3, 6, 9], ["海", "于", 4, 5, 9],
+            ["流", "之", 5, 4, 9], ["流", "水", 4, 4, 8], ["流", "为", 3, 4, 7]
+          ]
+        },
+        {
+          name: "战国末",
+          books: "荀子、韩非子",
+          meta: "181,046 正文字 · 512 个目标字位",
+          centerCounts: { "水": 108, "海": 23, "池": 22 },
+          coreTop3Centers: ["水", "海", "池"],
+          coreEdges: [
+            ["水", "之", 21, 27, 48], ["水", "而", 15, 24, 39], ["水", "也", 18, 16, 34],
+            ["海", "之", 6, 6, 12], ["海", "而", 5, 7, 12], ["海", "于", 5, 5, 10],
+            ["池", "以", 5, 4, 9], ["池", "圃", 10, 0, 10], ["池", "为", 4, 4, 8]
+          ],
+          edges: [
+            ["水", "之", 21, 27, 48], ["水", "而", 15, 24, 39], ["水", "也", 18, 16, 34],
+            ["水", "水", 14, 14, 28], ["水", "以", 14, 13, 27], ["水", "人", 9, 8, 17],
+            ["海", "之", 6, 6, 12], ["海", "而", 5, 7, 12], ["海", "于", 5, 5, 10],
+            ["池", "圃", 10, 0, 10], ["池", "以", 5, 4, 9], ["池", "为", 4, 4, 8]
+          ]
+        },
+        {
+          name: "西汉",
+          books: "春秋繁露",
+          meta: "58,581 正文字 · 128 个目标字位",
+          centerCounts: { "水": 31, "川": 11, "池": 7, "深": 5 },
+          coreTop3Centers: ["水", "川", "池"],
+          coreEdges: [
+            ["水", "之", 5, 6, 11], ["水", "也", 4, 10, 14], ["水", "于", 6, 2, 8],
+            ["川", "之", 4, 3, 7], ["川", "山", 8, 0, 8], ["川", "不", 3, 3, 6],
+            ["池", "一", 3, 2, 5], ["池", "尺", 2, 3, 5], ["池", "方", 2, 2, 4]
+          ],
+          edges: [
+            ["水", "也", 4, 10, 14], ["水", "之", 5, 6, 11], ["水", "于", 6, 2, 8],
+            ["川", "山", 8, 0, 8], ["深", "尺", 4, 4, 8], ["川", "之", 4, 3, 7],
+            ["川", "不", 3, 3, 6], ["池", "一", 3, 2, 5], ["池", "尺", 2, 3, 5],
+            ["池", "方", 2, 2, 4]
+          ]
+        }
+      ]
+    };
+
+    const DEFAULT_FINDINGS = [
+      {
+        tag: "发现 01 · 时代高峰",
+        accent: "indigo",
+        title: "战国中期涉水意象达到顶峰",
+        body: "《庄子内篇》（64.63/万字）与《孟子》（59.93/万字）远超先秦其他典籍；论辩从简短格言走向宏阔譬喻，大量借助“治水”“四海”“沧浪”“止水/渊”展开政教与心性思辨。"
+      },
+      {
+        tag: "发现 02 · 学派分化",
+        accent: "cinnabar",
+        title: "儒重伦理喻水、道重渊海静水、法重实用治水",
+        body: "儒家高频共现“水—火”“流—则”，侧重譬喻德性与教化；道家核心字突出“渊”“海”“止水”“审”，聚焦宇宙与虚静本体；法家《韩非子》中“池—圃”左共现 10 次、涉水动作（灌、饮、溺、决）高达 75 例，映射宫苑设施、攻防水利与现实政治寓言。"
+      },
+      {
+        tag: "发现 03 · 汉代转向",
+        accent: "slate",
+        title: "五行化与天人感应重构“水”义",
+        body: "《春秋繁露》核心频率仅 21.85/万字，但计入降水/旱情与五行后跃升至 51.04/万字（核心入选率仅 19.3%），且“川—山”“深—尺”“池—方”共现反映西汉求雨礼制与五行宇宙论对自然水象的制度化收编。"
+      },
+      {
+        tag: "发现 04 · 方法反思",
+        accent: "indigo",
+        title: "统计口径透明化：为何必须以“计入核心 = 1”区分候选字",
+        body: "3,170 例候选字中约 58.6%（1,857 例）属排除类（如“泛爱”抽象义、“桀溺/长沮”人名、“汝”人称代词），若不经语境人工判读直接做字频统计，将产生严重噪声。"
+      }
+    ];
+
+    /* =====================================================================
+       二、全局应用状态管理
+       ===================================================================== */
+    const state = {
+      paragraphs: structuredClone(BUILT_IN_PARAGRAPHS),
+      bookFreq: structuredClone(BUILT_IN_BOOK_FREQ),
+      network: structuredClone(BUILT_IN_NETWORK),
+      importedRawParagraphs: null, // 若用户仅导入 段落表.csv 暂存
+      importedRawCases: null,      // 若用户仅导入 原文用例索引.csv 暂存
+
+      // 模块一状态
+      corpus: {
+        book: '全部',
+        school: '全部',
+        period: '全部',
+        keyword: '',
+        coreOnly: false,
+        selectedId: BUILT_IN_PARAGRAPHS[0].id,
+        activeCaseIdx: null,
+        visibleLimit: 50
+      },
+
+      // 模块二状态
+      freq: {
+        metrics: { core: true, nature: true, wuxing: true },
+        semMode: 'count', // 'count' | 'pct'
+        sortKey: null,
+        sortDir: 'desc'
+      },
+
+      // 模块三状态
+      net: {
+        dim: 'school',       // 'school' | 'period'
+        groupIndex: 0,
+        mode: 'core',        // 'core' | 'full' | 'gallery'
+        selectedEdge: null,  // { center, neighbor, left, right, total }
+        selectedNode: null   // { side: 'center'|'neighbor', char }
+      },
+
+      // 模块四状态
+      findings: loadSavedFindings(),
+      editingFindings: false
+    };
+
+    let bookFreqChartInstance = null;
+    let semanticStackChartInstance = null;
+
+    /* =====================================================================
+       三、通用工具函数（Toast 提示、汉字定位、健壮 CSV 解析器）
+       ===================================================================== */
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      const colorMap = {
+        info: 'bg-indigoInk text-white border-indigoInk',
+        success: 'bg-emerald-800 text-white border-emerald-700',
+        warn: 'bg-cinnabar text-white border-cinnabar'
+      };
+      toast.className = `pointer-events-auto flex items-center gap-2 px-4 py-2.5 rounded-xl border shadow-lg text-xs sm:text-sm font-medium transition-all duration-300 opacity-0 translate-y-2 ${colorMap[type] || colorMap.info}`;
+      toast.textContent = message;
+      container.appendChild(toast);
+      requestAnimationFrame(() => {
+        toast.classList.remove('opacity-0', 'translate-y-2');
+      });
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3200);
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function isCJKChar(ch) {
+      return /[\u3400-\u9FFF\uF900-\uFAFF]/.test(ch);
+    }
+
+    /**
+     * 健壮 RFC-4180 CSV 解析器：支持 BOM、双引号包裹、引号转义 ""、字段内换行
+     */
+    function parseCSV(text) {
+      const cleanText = text.replace(/^\uFEFF/, '');
+      const rows = [];
+      let row = [];
+      let field = '';
+      let inQuotes = false;
+
+      for (let i = 0; i < cleanText.length; i++) {
+        const ch = cleanText[i];
+        const next = cleanText[i + 1];
+
+        if (inQuotes) {
+          if (ch === '"' && next === '"') {
+            field += '"';
+            i++;
+          } else if (ch === '"') {
+            inQuotes = false;
+          } else {
+            field += ch;
+          }
+        } else {
+          if (ch === '"') {
+            inQuotes = true;
+          } else if (ch === ',') {
+            row.push(field.trim());
+            field = '';
+          } else if (ch === '\r' && next === '\n') {
+            row.push(field.trim());
+            rows.push(row);
+            row = [];
+            field = '';
+            i++;
+          } else if (ch === '\n' || ch === '\r') {
+            row.push(field.trim());
+            rows.push(row);
+            row = [];
+            field = '';
+          } else {
+            field += ch;
+          }
+        }
+      }
+      if (field.length > 0 || row.length > 0) {
+        row.push(field.trim());
+        rows.push(row);
+      }
+
+      const validRows = rows.filter(r => r.length > 1 || (r.length === 1 && r[0] !== ''));
+      if (validRows.length < 2) return [];
+      const headers = validRows[0];
+      return validRows.slice(1).map(cols => {
+        const obj = {};
+        headers.forEach((h, idx) => {
+          obj[h] = cols[idx] !== undefined ? cols[idx] : '';
+        });
+        return obj;
+      });
+    }
+
+    function loadSavedFindings() {
+      try {
+        const raw = localStorage.getItem('water_dh_findings_v1');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length === DEFAULT_FINDINGS.length) return parsed;
+        }
+      } catch (e) {}
+      return structuredClone(DEFAULT_FINDINGS);
+    }
+
+    /* =====================================================================
+       四、模块一：原文段落与候选字判读
+       ===================================================================== */
+
+    function getCategoryStyle(statCat, isCore) {
+      if (isCore === 1 || statCat === '核心') {
+        return {
+          tokenCls: 'bg-indigoInk text-white ring-indigoInk/30',
+          badgeCls: 'bg-indigoInk text-white',
+          borderCls: 'border-l-indigoInk'
+        };
+      }
+      if (['冰雪', '降水', '凝结'].includes(statCat)) {
+        return {
+          tokenCls: 'bg-sky-600 text-white ring-sky-500/30',
+          badgeCls: 'bg-sky-100 text-sky-800 border border-sky-200',
+          borderCls: 'border-l-sky-600'
+        };
+      }
+      if (statCat === '五行') {
+        return {
+          tokenCls: 'bg-slateMist text-white ring-slateMist/30',
+          badgeCls: 'bg-slateMist/15 text-slateMist border border-slateMist/30',
+          borderCls: 'border-l-slateMist'
+        };
+      }
+      if (['旱情', '待辨'].includes(statCat)) {
+        return {
+          tokenCls: 'bg-amber-600 text-white ring-amber-500/30',
+          badgeCls: 'bg-amber-100 text-amber-800 border border-amber-200',
+          borderCls: 'border-l-amber-600'
+        };
+      }
+      // 排除类
+      return {
+        tokenCls: 'bg-cinnabar/20 text-cinnabar underline decoration-cinnabar/60 decoration-dashed underline-offset-4 ring-cinnabar/25',
+        badgeCls: 'bg-cinnabar/10 text-cinnabar border border-cinnabar/25',
+        borderCls: 'border-l-cinnabar/70'
+      };
+    }
+
+    function populateCorpusFilterOptions() {
+      const books = [...new Set(state.paragraphs.map(p => p.书名).filter(Boolean))];
+      const schools = [...new Set(state.paragraphs.map(p => p.学派).filter(Boolean))];
+      const periods = [...new Set(state.paragraphs.map(p => p.时期).filter(Boolean))];
+
+      const fillSelect = (elId, labelAll, items, currentVal) => {
+        const el = document.getElementById(elId);
+        el.innerHTML = `<option value="全部">${labelAll}</option>` +
+          items.map(item => `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`).join('');
+        el.value = items.includes(currentVal) ? currentVal : '全部';
+      };
+
+      fillSelect('filterBook', '全部典籍', books, state.corpus.book);
+      fillSelect('filterSchool', '全部学派', schools, state.corpus.school);
+      fillSelect('filterPeriod', '全部时期', periods, state.corpus.period);
+    }
+
+    function getVisibleCasesForParagraph(p) {
+      const cases = p.用例 || [];
+      return state.corpus.coreOnly ? cases.filter(c => Number(c.计入核心) === 1) : cases;
+    }
+
+    function getFilteredParagraphs() {
+      const { book, school, period, keyword, coreOnly } = state.corpus;
+      const kw = keyword.trim().toLowerCase();
+
+      return state.paragraphs.filter(p => {
+        if (book !== '全部' && p.书名 !== book) return false;
+        if (school !== '全部' && p.学派 !== school) return false;
+        if (period !== '全部' && p.时期 !== period) return false;
+
+        const visibleCases = getVisibleCasesForParagraph(p);
+        if (coreOnly && visibleCases.length === 0) return false;
+
+        if (kw) {
+          const hitText = (p.正文 || '').toLowerCase().includes(kw)
+            || (p.篇名 || '').toLowerCase().includes(kw)
+            || (p.id || '').toLowerCase().includes(kw)
+            || (p.书名 || '').toLowerCase().includes(kw)
+            || visibleCases.some(c =>
+              (c.目标字 || '').toLowerCase().includes(kw) ||
+              (c.理由 || '').toLowerCase().includes(kw) ||
+              (c.语义类别 || '').toLowerCase().includes(kw)
+            );
+          if (!hitText) return false;
+        }
+        return true;
+      });
+    }
+
+    /**
+     * 将段落正文中的候选字精准映射到字符串索引（优先按 1-indexed 段内汉字位匹配，若因节选偏移则自动匹配最近的目标字）
+     */
+    function buildHighlightedTextHTML(text, cases) {
+      const chars = Array.from(text || '');
+      const cjkPosToCharIdx = new Map();
+      const charPositionsByGlyph = new Map();
+      let cjkCounter = 0;
+
+      chars.forEach((ch, idx) => {
+        if (isCJKChar(ch)) {
+          cjkCounter++;
+          cjkPosToCharIdx.set(cjkCounter, idx);
+        }
+        if (!charPositionsByGlyph.has(ch)) charPositionsByGlyph.set(ch, []);
+        charPositionsByGlyph.get(ch).push({ charIdx: idx, cjkPos: cjkCounter });
+      });
+
+      const charIdxToCase = new Map();
+      const usedCharIndices = new Set();
+
+      cases.forEach((c, caseIdx) => {
+        const targetPos = Number(c.段内汉字位);
+        const targetChar = c.目标字;
+        let matchedCharIdx = null;
+
+        // 1. 优先精确匹配 段内汉字位
+        if (targetPos && cjkPosToCharIdx.has(targetPos)) {
+          const candidateIdx = cjkPosToCharIdx.get(targetPos);
+          if (chars[candidateIdx] === targetChar && !usedCharIndices.has(candidateIdx)) {
+            matchedCharIdx = candidateIdx;
+          }
+        }
+
+        // 2. 若精确位不符（如节选带省略号），查找距离目标字位最近的未占用匹配字
+        if (matchedCharIdx === null && charPositionsByGlyph.has(targetChar)) {
+          const candidates = charPositionsByGlyph.get(targetChar)
+            .filter(item => !usedCharIndices.has(item.charIdx));
+          if (candidates.length > 0) {
+            if (targetPos) {
+              candidates.sort((a, b) => Math.abs(a.cjkPos - targetPos) - Math.abs(b.cjkPos - targetPos));
+            }
+            matchedCharIdx = candidates[0].charIdx;
+          }
+        }
+
+        if (matchedCharIdx !== null) {
+          usedCharIndices.add(matchedCharIdx);
+          charIdxToCase.set(matchedCharIdx, { c, caseIdx });
+        }
+      });
+
+      return chars.map((ch, idx) => {
+        if (!charIdxToCase.has(idx)) {
+          return escapeHtml(ch);
+        }
+        const { c, caseIdx } = charIdxToCase.get(idx);
+        const style = getCategoryStyle(c.统计类别, Number(c.计入核心));
+        const isActive = state.corpus.activeCaseIdx === caseIdx;
+        return `<button type="button" data-case-idx="${caseIdx}" title="${escapeHtml(c.目标字)}（${escapeHtml(c.统计类别)} / ${escapeHtml(c.语义类别)}）点击查看判读"
+          class="corpus-token inline-flex items-center justify-center mx-0.5 px-1.5 py-0.5 rounded-md font-serifSC font-bold leading-none transition-all cursor-pointer hover:scale-105 focus:outline-none ring-2 ${style.tokenCls} ${isActive ? 'token-active ring-4 ring-cinnabar/50' : ''}">${escapeHtml(ch)}</button>`;
+      }).join('');
+    }
+
+    function renderCorpusModule() {
+      const filtered = getFilteredParagraphs();
+      const totalCases = filtered.reduce((acc, p) => acc + getVisibleCasesForParagraph(p).length, 0);
+
+      document.getElementById('corpusMatchCount').textContent = filtered.length.toLocaleString();
+      document.getElementById('corpusCaseCount').textContent = totalCases.toLocaleString();
+      document.getElementById('coreOnlyHint').textContent = state.corpus.coreOnly
+        ? '当前：仅展示「计入核心 = 1」的段落与核心涉水用字'
+        : '当前：展示全部候选字（含排除、冰雪、降水、五行等）';
+
+      // 确保选中项存在于筛选结果中
+      if (filtered.length > 0 && !filtered.some(p => p.id === state.corpus.selectedId)) {
+        state.corpus.selectedId = filtered[0].id;
+        state.corpus.activeCaseIdx = null;
+      }
+
+      // 渲染左侧列表
+      const listEl = document.getElementById('paragraphList');
+      const loadMoreWrap = document.getElementById('loadMoreWrap');
+      const listStatusEl = document.getElementById('listStatusText');
+
+      if (filtered.length === 0) {
+        listStatusEl.textContent = '0 条';
+        loadMoreWrap.classList.add('hidden');
+        listEl.innerHTML = `
+          <div class="p-8 text-center text-sm text-slate-500">
+            未找到符合条件的典籍段落，请尝试放宽筛选或重置条件。
+          </div>`;
+        document.getElementById('paragraphDetailCard').innerHTML = `
+          <div class="py-12 text-center text-slate-400 text-sm">暂无选中段落</div>`;
+        document.getElementById('annotationList').innerHTML = `
+          <div class="py-10 text-center text-slate-400 text-sm">暂无候选字判读记录</div>`;
+        document.getElementById('detailCasesBadge').textContent = '0 例';
+        return;
+      }
+
+      const slice = filtered.slice(0, state.corpus.visibleLimit);
+      listStatusEl.textContent = `显示 ${slice.length} / ${filtered.length} 段`;
+      if (filtered.length > slice.length) {
+        loadMoreWrap.classList.remove('hidden');
+      } else {
+        loadMoreWrap.classList.add('hidden');
+      }
+
+      listEl.innerHTML = slice.map(p => {
+        const isSelected = p.id === state.corpus.selectedId;
+        const visibleCases = getVisibleCasesForParagraph(p);
+        const coreCnt = visibleCases.filter(c => Number(c.计入核心) === 1).length;
+        const preview = (p.正文 || '').slice(0, 46) + ((p.正文 || '').length > 46 ? '…' : '');
+        const uniqueChars = [...new Set(visibleCases.map(c => c.目标字))].slice(0, 5);
+
+        return `
+          <button type="button" data-pid="${escapeHtml(p.id)}"
+            class="para-item w-full text-left p-4 transition-colors hover:bg-paper ${isSelected ? 'bg-indigoInk/[0.06] border-l-4 border-l-indigoInk' : 'border-l-4 border-l-transparent'}">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-1.5 min-w-0">
+                <span class="font-serifSC font-bold text-sm text-indigoInk shrink-0">《${escapeHtml(p.书名)}》</span>
+                <span class="text-xs text-slate-500 truncate">${escapeHtml(p.篇名)}</span>
+              </div>
+              <span class="text-[11px] font-mono text-slate-400 shrink-0">${escapeHtml(p.id)}</span>
+            </div>
+            <p class="mt-1.5 text-xs text-slate-600 line-clamp-2 leading-relaxed">${escapeHtml(preview)}</p>
+            <div class="mt-2.5 flex flex-wrap items-center justify-between gap-1.5">
+              <div class="flex flex-wrap gap-1">
+                ${uniqueChars.map(ch => `<span class="px-1.5 py-0.5 rounded bg-warmMuted border border-softBorder text-[11px] font-serifSC font-semibold text-deepInk">${escapeHtml(ch)}</span>`).join('')}
+              </div>
+              <span class="text-[11px] text-slate-500 tabular-nums">
+                核心 <strong class="text-indigoInk">${coreCnt}</strong> / 共 ${visibleCases.length} 例
+              </span>
+            </div>
+          </button>`;
+      }).join('');
+
+      // 绑定左侧点击事件
+      listEl.querySelectorAll('.para-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.corpus.selectedId = btn.dataset.pid;
+          state.corpus.activeCaseIdx = null;
+          renderCorpusModule();
+        });
+      });
+
+      // 渲染右侧详情
+      const current = filtered.find(p => p.id === state.corpus.selectedId) || filtered[0];
+      renderParagraphDetail(current);
+    }
+
+    function renderParagraphDetail(p) {
+      const visibleCases = getVisibleCasesForParagraph(p);
+      const detailEl = document.getElementById('paragraphDetailCard');
+      const highlightedHTML = buildHighlightedTextHTML(p.正文, visibleCases);
+
+      detailEl.innerHTML = `
+        <div class="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-softBorder">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="px-3 py-1 rounded-xl bg-indigoInk text-white font-serifSC font-bold text-sm">
+              《${escapeHtml(p.书名)}》
+            </span>
+            <span class="font-serifSC font-semibold text-base text-deepInk">${escapeHtml(p.篇名)}</span>
+          </div>
+          <span class="px-2.5 py-1 rounded-lg bg-paper border border-softBorder font-mono text-xs text-slate-600">
+            段落编号：${escapeHtml(p.id)}
+          </span>
+        </div>
+
+        <div class="mt-3 flex flex-wrap items-center gap-2 text-xs">
+          <span class="px-2.5 py-1 rounded-full bg-warmMuted text-deepInk border border-softBorder">
+            学派：<strong>${escapeHtml(p.学派)}</strong>
+          </span>
+          <span class="px-2.5 py-1 rounded-full bg-warmMuted text-deepInk border border-softBorder">
+            时期：<strong>${escapeHtml(p.时期)}</strong>
+          </span>
+          <span class="px-2.5 py-1 rounded-full bg-indigoInk/10 text-indigoInk tabular-nums">
+            当前展示候选字位：<strong>${visibleCases.length}</strong> 例
+          </span>
+        </div>
+
+        <!-- 古籍正文排版区 -->
+        <div class="mt-5 p-5 sm:p-6 rounded-2xl bg-paper border border-softBorder/90 font-serifSC text-lg sm:text-[1.22rem] leading-[2.15] text-deepInk tracking-wide">
+          ${highlightedHTML}
+        </div>
+
+        <p class="mt-3 text-xs text-slate-500 flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-indigoInk shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <span>提示：点击上方任意带色块高亮的汉字，可在下方明细表中自动定位并展开人工判读理由。</span>
+        </p>
+      `;
+
+      // 绑定正文中高亮字点击
+      detailEl.querySelectorAll('.corpus-token').forEach(tok => {
+        tok.addEventListener('click', () => {
+          const idx = Number(tok.dataset.caseIdx);
+          state.corpus.activeCaseIdx = idx;
+          renderParagraphDetail(p);
+          const targetCard = document.querySelector(`[data-anno-idx="${idx}"]`);
+          if (targetCard) {
+            targetCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        });
+      });
+
+      // 渲染判读条目列表
+      const annoEl = document.getElementById('annotationList');
+      document.getElementById('detailCasesBadge').textContent = `${visibleCases.length} 例`;
+
+      if (visibleCases.length === 0) {
+        annoEl.innerHTML = `<div class="p-8 text-center text-sm text-slate-500">本段在当前筛选口径下暂无候选字位。</div>`;
+        return;
+      }
+
+      annoEl.innerHTML = visibleCases.map((c, idx) => {
+        const isCore = Number(c.计入核心) === 1;
+        const isNature = Number(c.计入自然水象) === 1;
+        const isWuxing = Number(c.计入含五行) === 1;
+        const style = getCategoryStyle(c.统计类别, Number(c.计入核心));
+        const isActive = state.corpus.activeCaseIdx === idx;
+
+        return `
+          <div data-anno-idx="${idx}"
+            class="anno-card p-4 sm:px-5 border-l-4 ${style.borderCls} cursor-pointer transition-all hover:bg-paper/80 ${isActive ? 'bg-cinnabar/[0.06] ring-1 ring-inset ring-cinnabar/30' : ''}">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex flex-wrap items-center gap-2.5">
+                <span class="w-9 h-9 rounded-xl font-serifSC font-bold text-lg flex items-center justify-center shadow-xs ${style.tokenCls}">
+                  ${escapeHtml(c.目标字)}
+                </span>
+                <div>
+                  <div class="flex flex-wrap items-center gap-1.5">
+                    <span class="px-2 py-0.5 rounded-md text-xs font-semibold ${style.badgeCls}">
+                      ${escapeHtml(c.统计类别)}
+                    </span>
+                    <span class="px-2 py-0.5 rounded-md text-xs bg-warmMuted text-deepInk border border-softBorder">
+                      语义：${escapeHtml(c.语义类别)}
+                    </span>
+                    <span class="text-xs text-slate-500 font-mono tabular-nums">
+                      第 ${escapeHtml(c.段内汉字位 || '-')} 汉字位
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 三口径徽章 -->
+              <div class="flex flex-wrap items-center gap-1.5 text-[11px]">
+                <span class="px-2 py-0.5 rounded-full font-medium ${isCore ? 'bg-indigoInk/15 text-indigoInk border border-indigoInk/25' : 'bg-slate-100 text-slate-400'}">
+                  计入核心: ${isCore ? '1' : '0'}
+                </span>
+                <span class="px-2 py-0.5 rounded-full font-medium ${isNature ? 'bg-sky-100 text-sky-800 border border-sky-200' : 'bg-slate-100 text-slate-400'}">
+                  自然水象: ${isNature ? '1' : '0'}
+                </span>
+                <span class="px-2 py-0.5 rounded-full font-medium ${isWuxing ? 'bg-slateMist/20 text-slateMist border border-slateMist/30' : 'bg-slate-100 text-slate-400'}">
+                  含五行: ${isWuxing ? '1' : '0'}
+                </span>
+              </div>
+            </div>
+
+            <div class="mt-2.5 pl-0 sm:pl-11 text-sm text-slate-700 leading-relaxed">
+              <span class="text-xs font-semibold text-slate-500 mr-1">判读理由：</span>${escapeHtml(c.理由 || '—')}
+            </div>
+          </div>`;
+      }).join('');
+
+      annoEl.querySelectorAll('.anno-card').forEach(card => {
+        card.addEventListener('click', () => {
+          const idx = Number(card.dataset.annoIdx);
+          state.corpus.activeCaseIdx = idx;
+          renderParagraphDetail(p);
+        });
+      });
+    }
+
+    function jumpToCorpusWithChar(char) {
+      state.corpus.book = '全部';
+      state.corpus.school = '全部';
+      state.corpus.period = '全部';
+      state.corpus.keyword = char;
+      document.getElementById('filterBook').value = '全部';
+      document.getElementById('filterSchool').value = '全部';
+      document.getElementById('filterPeriod').value = '全部';
+      document.getElementById('filterKeyword').value = char;
+      document.getElementById('clearKeywordBtn').classList.remove('hidden');
+      renderCorpusModule();
+      document.getElementById('module-corpus').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      showToast(`已在原文模块为您筛选包含“${char}”字的段落`, 'info');
+    }
+
+    function jumpToCorpusWithBook(bookName) {
+      state.corpus.book = bookName;
+      state.corpus.school = '全部';
+      state.corpus.period = '全部';
+      state.corpus.keyword = '';
+      document.getElementById('filterBook').value = bookName;
+      document.getElementById('filterSchool').value = '全部';
+      document.getElementById('filterPeriod').value = '全部';
+      document.getElementById('filterKeyword').value = '';
+      document.getElementById('clearKeywordBtn').classList.add('hidden');
+      renderCorpusModule();
+      document.getElementById('module-corpus').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      showToast(`已切换至《${bookName}》原文段落与判读`, 'info');
+    }
+
+    /* =====================================================================
+       五、模块二：逐书频率交互图表与可排序对比表
+       ===================================================================== */
+
+    function renderBookFreqCharts() {
+      const books = state.bookFreq;
+      const labels = books.map(b => b.书名);
+
+      // 1. 每万字涉水频率分组柱状图
+      const datasets1 = [];
+      if (state.freq.metrics.core) {
+        datasets1.push({
+          label: '核心口径 (次/万字)',
+          data: books.map(b => b.核心每万字),
+          backgroundColor: '#1F4E5F',
+          borderRadius: 6,
+          maxBarThickness: 28
+        });
+      }
+      if (state.freq.metrics.nature) {
+        datasets1.push({
+          label: '自然水象口径 (次/万字)',
+          data: books.map(b => b.自然水象每万字),
+          backgroundColor: '#B85A3A',
+          borderRadius: 6,
+          maxBarThickness: 28
+        });
+      }
+      if (state.freq.metrics.wuxing) {
+        datasets1.push({
+          label: '含五行口径 (次/万字)',
+          data: books.map(b => b.含五行每万字),
+          backgroundColor: '#6D7A9E',
+          borderRadius: 6,
+          maxBarThickness: 28
+        });
+      }
+
+      const ctx1 = document.getElementById('bookFreqChart').getContext('2d');
+      if (bookFreqChartInstance) bookFreqChartInstance.destroy();
+      bookFreqChartInstance = new Chart(ctx1, {
+        type: 'bar',
+        data: { labels, datasets: datasets1 },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { boxWidth: 12, usePointStyle: true, pointStyle: 'rectRounded', font: { family: '"Noto Sans SC"', size: 12 }, color: '#334155' }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(30, 41, 59, 0.94)',
+              padding: 12,
+              cornerRadius: 10,
+              titleFont: { family: '"Noto Serif SC"', size: 14 },
+              bodyFont: { family: '"Noto Sans SC"', size: 12 },
+              callbacks: {
+                afterBody: (items) => {
+                  const b = books[items[0].dataIndex];
+                  return `\n核心例数：${b.核心次数}｜自然水象：${b.自然水象}｜含五行：${b.含五行}\n核心入选率：${b.核心入选率}%`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { font: { family: '"Noto Serif SC"', size: 12, weight: '600' }, color: '#1E293B' }
+            },
+            y: {
+              beginAtZero: true,
+              grid: { color: '#EFECE4' },
+              title: { display: true, text: '频次 / 每万正文汉字', font: { size: 11 }, color: '#64748B' },
+              ticks: { color: '#64748B', font: { size: 11 } }
+            }
+          }
+        }
+      });
+
+      // 2. 语义类别分布堆叠条形图
+      const semCats = [
+        { key: '水域', color: '#1F4E5F' },
+        { key: '水物', color: '#458588' },
+        { key: '涉水动作', color: '#B85A3A' },
+        { key: '水体运动', color: '#6D7A9E' },
+        { key: '水域设施', color: '#C8A97E' }
+      ];
+
+      const isPct = state.freq.semMode === 'pct';
+      const datasets2 = semCats.map(cat => ({
+        label: cat.key,
+        backgroundColor: cat.color,
+        borderRadius: 3,
+        data: books.map(b => {
+          const val = (b.语义分布 && b.语义分布[cat.key]) || 0;
+          if (!isPct) return val;
+          const total = Object.values(b.语义分布 || {}).reduce((s, v) => s + v, 0) || b.核心次数 || 1;
+          return Number(((val / total) * 100).toFixed(1));
+        })
+      }));
+
+      const ctx2 = document.getElementById('semanticStackChart').getContext('2d');
+      if (semanticStackChartInstance) semanticStackChartInstance.destroy();
+      semanticStackChartInstance = new Chart(ctx2, {
+        type: 'bar',
+        data: { labels, datasets: datasets2 },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { boxWidth: 11, usePointStyle: true, pointStyle: 'rectRounded', font: { family: '"Noto Sans SC"', size: 11 }, color: '#334155' }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(30, 41, 59, 0.94)',
+              padding: 11,
+              cornerRadius: 10,
+              callbacks: {
+                label: (ctx) => `${ctx.dataset.label}：${ctx.raw}${isPct ? '%' : ' 例'}`
+              }
+            }
+          },
+          scales: {
+            x: {
+              stacked: true,
+              max: isPct ? 100 : undefined,
+              grid: { color: '#EFECE4' },
+              ticks: {
+                color: '#64748B',
+                font: { size: 11 },
+                callback: v => isPct ? `${v}%` : v
+              }
+            },
+            y: {
+              stacked: true,
+              grid: { display: false },
+              ticks: { font: { family: '"Noto Serif SC"', size: 12, weight: '600' }, color: '#1E293B' }
+            }
+          }
+        }
+      });
+    }
+
+    function renderBookFreqTable() {
+      const tbody = document.getElementById('bookFreqTableBody');
+      const rows = [...state.bookFreq];
+
+      if (state.freq.sortKey) {
+        const key = state.freq.sortKey;
+        const dir = state.freq.sortDir === 'asc' ? 1 : -1;
+        rows.sort((a, b) => {
+          if (typeof a[key] === 'number' && typeof b[key] === 'number') {
+            return (a[key] - b[key]) * dir;
+          }
+          return String(a[key]).localeCompare(String(b[key]), 'zh-CN') * dir;
+        });
+      }
+
+      tbody.innerHTML = rows.map(b => {
+        const isPeak = b.核心每万字 >= 55;
+        const isHanJump = (b.含五行每万字 - b.核心每万字) > 20;
+        return `
+          <tr class="hover:bg-paper/90 transition-colors">
+            <td class="py-3 px-4 font-serifSC font-bold text-indigoInk">
+              <button type="button" onclick="jumpToCorpusWithBook('${escapeHtml(b.书名)}')" class="hover:underline text-left">
+                《${escapeHtml(b.书名)}》
+              </button>
+            </td>
+            <td class="py-3 px-3">
+              <span class="inline-block px-2 py-0.5 rounded bg-warmMuted border border-softBorder text-xs font-medium text-deepInk">${escapeHtml(b.学派)}</span>
+              <span class="block text-[11px] text-slate-500 mt-0.5">${escapeHtml(b.时期)}</span>
+            </td>
+            <td class="py-3 px-3 text-right text-slate-700">${Number(b.段落数).toLocaleString()}</td>
+            <td class="py-3 px-3 text-right text-slate-700">${Number(b.正文汉字数).toLocaleString()}</td>
+            <td class="py-3 px-3 text-right text-slate-600">${Number(b.候选总次数).toLocaleString()}</td>
+            <td class="py-3 px-3 text-right font-semibold text-indigoInk">${Number(b.核心次数).toLocaleString()}</td>
+            <td class="py-3 px-3 text-right">
+              <span class="px-2 py-0.5 rounded-md font-semibold ${isPeak ? 'bg-indigoInk text-white' : 'text-indigoInk'}">
+                ${Number(b.核心每万字).toFixed(2)}
+              </span>
+            </td>
+            <td class="py-3 px-3 text-right text-cinnabar font-medium">${Number(b.自然水象每万字).toFixed(2)}</td>
+            <td class="py-3 px-3 text-right">
+              <span class="px-2 py-0.5 rounded-md font-medium ${isHanJump ? 'bg-slateMist text-white' : 'text-slateMist'}">
+                ${Number(b.含五行每万字).toFixed(2)}
+              </span>
+            </td>
+            <td class="py-3 px-3 text-right text-slate-700">${Number(b.核心入选率).toFixed(1)}%</td>
+            <td class="py-3 px-4 text-xs text-slate-600 font-serifSC">${escapeHtml(b.高频核心字 || '—')}</td>
+          </tr>`;
+      }).join('');
+    }
+
+    /* =====================================================================
+       六、模块三：涉水字与邻字可点击二分共现网络（SVG）
+       ===================================================================== */
+
+    const CENTER_PALETTE = ['#1F6E7A', '#C26D4A', '#7B86B2', '#4A7C59', '#8E5B6B', '#9C7A3C', '#4B6584'];
+
+    function getCurrentNetworkGroups() {
+      return state.network[state.net.dim] || [];
+    }
+
+    function getActiveEdgesForGroup(group, mode = state.net.mode) {
+      if (mode === 'core' && group.coreEdges && group.coreEdges.length > 0) {
+        return group.coreEdges;
+      }
+      return (group.edges || []).slice(0, 15);
+    }
+
+    /**
+     * 构建清雅精准的二分网络 SVG（支持完整交互模式 & 紧凑画廊复刻模式）
+     */
+    function buildBipartiteSvg(group, options = {}) {
+      const {
+        mode = 'core',
+        interactive = true,
+        width = 560,
+        minHeight = 360,
+        selectedEdge = null,
+        selectedNode = null
+      } = options;
+
+      const rawEdges = getActiveEdgesForGroup(group, mode);
+      if (rawEdges.length === 0) {
+        return `<div class="text-sm text-slate-400 py-12">该分组暂无共现边数据</div>`;
+      }
+
+      // 整理左侧中心字顺序（核心图严格遵循 Top3 顺序）
+      const centerOrder = [];
+      if (mode === 'core' && group.coreTop3Centers) {
+        group.coreTop3Centers.forEach(ch => {
+          if (rawEdges.some(e => e[0] === ch)) centerOrder.push(ch);
+        });
+      }
+      rawEdges.forEach(e => {
+        if (!centerOrder.includes(e[0])) centerOrder.push(e[0]);
+      });
+
+      // 整理右侧邻字顺序（按总权重与连接中心字序排列，减少交叉）
+      const neighborMap = new Map();
+      rawEdges.forEach(e => {
+        const [c, n, l, r, t] = e;
+        if (!neighborMap.has(n)) {
+          neighborMap.set(n, { char: n, total: 0, firstCenterIdx: centerOrder.indexOf(c) });
+        }
+        const obj = neighborMap.get(n);
+        obj.total += t;
+        obj.firstCenterIdx = Math.min(obj.firstCenterIdx, centerOrder.indexOf(c));
+      });
+      const neighborOrder = [...neighborMap.values()]
+        .sort((a, b) => (a.firstCenterIdx - b.firstCenterIdx) || (b.total - a.total))
+        .map(d => d.char);
+
+      const maxRow = Math.max(centerOrder.length, neighborOrder.length);
+      const height = Math.max(minHeight, maxRow * (interactive ? 40 : 30) + 56);
+      const padY = 36;
+      const leftX = interactive ? 132 : 95;
+      const rightX = width - (interactive ? 105 : 70);
+
+      // 计算节点 Y 坐标
+      const centerY = new Map();
+      centerOrder.forEach((ch, i) => {
+        const span = height - padY * 2;
+        const y = centerOrder.length === 1 ? height / 2 : padY + (span / (centerOrder.length - 1)) * i;
+        centerY.set(ch, y);
+      });
+
+      const neighborY = new Map();
+      neighborOrder.forEach((ch, i) => {
+        const span = height - padY * 2;
+        const y = neighborOrder.length === 1 ? height / 2 : padY + (span / (neighborOrder.length - 1)) * i;
+        neighborY.set(ch, y);
+      });
+
+      const maxTotal = Math.max(...rawEdges.map(e => e[4]), 1);
+      const minTotal = Math.min(...rawEdges.map(e => e[4]), 1);
+
+      const getStrokeW = (t) => {
+        if (maxTotal === minTotal) return interactive ? 3.2 : 2.4;
+        const ratio = (t - minTotal) / (maxTotal - minTotal);
+        return (interactive ? 1.8 : 1.4) + ratio * (interactive ? 5.2 : 3.6);
+      };
+
+      const hasSelection = interactive && (selectedEdge || selectedNode);
+
+      // 绘制连线
+      const edgesSvg = rawEdges.map((e, idx) => {
+        const [c, n, l, r, t] = e;
+        const cIdx = centerOrder.indexOf(c);
+        const color = CENTER_PALETTE[cIdx % CENTER_PALETTE.length];
+        const y1 = centerY.get(c);
+        const y2 = neighborY.get(n);
+        const sw = getStrokeW(t);
+
+        let isMatch = true;
+        if (selectedEdge) {
+          isMatch = selectedEdge.center === c && selectedEdge.neighbor === n;
+        } else if (selectedNode) {
+          isMatch = (selectedNode.side === 'center' && selectedNode.char === c)
+            || (selectedNode.side === 'neighbor' && selectedNode.char === n);
+        }
+
+        const opacity = hasSelection ? (isMatch ? 0.92 : 0.12) : 0.68;
+        const hitSw = Math.max(sw + 10, 14);
+
+        return `
+          <g class="net-edge-group" data-edge-idx="${idx}">
+            <line x1="${leftX}" y1="${y1}" x2="${rightX}" y2="${y2}"
+              stroke="${color}" stroke-width="${isMatch && hasSelection ? sw + 1.2 : sw}"
+              stroke-opacity="${opacity}" stroke-linecap="round" class="net-edge" />
+            ${interactive ? `<line x1="${leftX}" y1="${y1}" x2="${rightX}" y2="${y2}"
+              stroke="transparent" stroke-width="${hitSw}" class="net-edge-hit cursor-pointer" data-center="${escapeHtml(c)}" data-neighbor="${escapeHtml(n)}" />` : ''}
+          </g>`;
+      }).join('');
+
+      // 绘制左侧中心字节点
+      const centersSvg = centerOrder.map((ch, i) => {
+        const y = centerY.get(ch);
+        const color = CENTER_PALETTE[i % CENTER_PALETTE.length];
+        const count = (group.centerCounts && group.centerCounts[ch])
+          || rawEdges.filter(e => e[0] === ch).reduce((s, e) => s + e[4], 0);
+
+        let isMatch = true;
+        if (selectedEdge) isMatch = selectedEdge.center === ch;
+        else if (selectedNode) {
+          isMatch = selectedNode.side === 'center'
+            ? selectedNode.char === ch
+            : rawEdges.some(e => e[0] === ch && e[1] === selectedNode.char);
+        }
+        const opacity = hasSelection ? (isMatch ? 1 : 0.25) : 1;
+
+        return `
+          <g class="net-node" data-side="center" data-char="${escapeHtml(ch)}" style="opacity:${opacity}">
+            <circle cx="${leftX}" cy="${y}" r="${interactive ? 7 : 5.5}" fill="${color}" stroke="#FFFFFF" stroke-width="2" />
+            <text x="${leftX - 16}" y="${y + 5}" text-anchor="end" fill="${color}"
+              font-family="'Noto Serif SC', serif" font-weight="700" font-size="${interactive ? 17 : 14}">
+              ${escapeHtml(ch)} <tspan font-family="'Noto Sans SC', sans-serif" font-weight="600" font-size="${interactive ? 14 : 12}">${count}</tspan>
+            </text>
+          </g>`;
+      }).join('');
+
+      // 绘制右侧邻字节点
+      const neighborsSvg = neighborOrder.map(ch => {
+        const y = neighborY.get(ch);
+        let isMatch = true;
+        if (selectedEdge) isMatch = selectedEdge.neighbor === ch;
+        else if (selectedNode) {
+          isMatch = selectedNode.side === 'neighbor'
+            ? selectedNode.char === ch
+            : rawEdges.some(e => e[1] === ch && e[0] === selectedNode.char);
+        }
+        const opacity = hasSelection ? (isMatch ? 1 : 0.25) : 1;
+
+        return `
+          <g class="net-node" data-side="neighbor" data-char="${escapeHtml(ch)}" style="opacity:${opacity}">
+            <circle cx="${rightX}" cy="${y}" r="${interactive ? 5.5 : 4.2}" fill="#334155" stroke="#FFFFFF" stroke-width="1.8" />
+            <text x="${rightX + 16}" y="${y + 5}" text-anchor="start" fill="#1E293B"
+              font-family="'Noto Serif SC', serif" font-weight="600" font-size="${interactive ? 16 : 13}">
+              ${escapeHtml(ch)}
+            </text>
+          </g>`;
+      }).join('');
+
+      return `
+        <svg viewBox="0 0 ${width} ${height}" class="w-full h-auto max-w-[600px] select-none" role="img" aria-label="${escapeHtml(group.name)}涉水共现网络">
+          ${edgesSvg}
+          ${centersSvg}
+          ${neighborsSvg}
+        </svg>`;
+    }
+
+    function renderNetworkModule() {
+      const groups = getCurrentNetworkGroups();
+      if (state.net.groupIndex >= groups.length) state.net.groupIndex = 0;
+
+      // 更新维度按钮样式
+      const dimSchoolBtn = document.getElementById('dimSchoolBtn');
+      const dimPeriodBtn = document.getElementById('dimPeriodBtn');
+      if (state.net.dim === 'school') {
+        dimSchoolBtn.className = 'px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium bg-indigoInk text-white transition-all';
+        dimPeriodBtn.className = 'px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium text-slate-600 hover:text-indigoInk transition-all';
+      } else {
+        dimPeriodBtn.className = 'px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium bg-indigoInk text-white transition-all';
+        dimSchoolBtn.className = 'px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-medium text-slate-600 hover:text-indigoInk transition-all';
+      }
+
+      // 更新视图模式按钮样式
+      const modeMap = {
+        core: document.getElementById('netModeCoreBtn'),
+        full: document.getElementById('netModeFullBtn'),
+        gallery: document.getElementById('netModeGalleryBtn')
+      };
+      Object.entries(modeMap).forEach(([k, btn]) => {
+        if (state.net.mode === k) {
+          btn.className = 'px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium bg-cinnabar text-white transition-all';
+        } else {
+          btn.className = 'px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium text-slate-600 hover:text-cinnabar transition-all';
+        }
+      });
+
+      const pillsEl = document.getElementById('networkGroupPills');
+      const singleView = document.getElementById('networkSingleView');
+      const galleryView = document.getElementById('networkGalleryView');
+
+      if (state.net.mode === 'gallery') {
+        pillsEl.classList.add('hidden');
+        singleView.classList.add('hidden');
+        galleryView.classList.remove('hidden');
+        renderNetworkGallery(groups);
+        return;
+      }
+
+      pillsEl.classList.remove('hidden');
+      singleView.classList.remove('hidden');
+      galleryView.classList.add('hidden');
+
+      // 渲染分组切换胶囊
+      pillsEl.innerHTML = groups.map((g, idx) => {
+        const active = idx === state.net.groupIndex;
+        return `
+          <button type="button" data-gidx="${idx}"
+            class="group-pill px-4 py-2 rounded-xl border text-left transition-all ${active ? 'bg-indigoInk text-white border-indigoInk shadow-sm' : 'bg-card text-deepInk border-softBorder hover:border-indigoInk/50'}">
+            <div class="font-serifSC font-bold text-sm leading-tight">${escapeHtml(g.name)}</div>
+            <div class="text-[11px] mt-0.5 ${active ? 'text-white/80' : 'text-slate-500'}">${escapeHtml(g.books)}</div>
+          </button>`;
+      }).join('');
+
+      pillsEl.querySelectorAll('.group-pill').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.net.groupIndex = Number(btn.dataset.gidx);
+          state.net.selectedEdge = null;
+          state.net.selectedNode = null;
+          renderNetworkModule();
+        });
+      });
+
+      const currentGroup = groups[state.net.groupIndex];
+      const activeEdges = getActiveEdgesForGroup(currentGroup, state.net.mode);
+
+      document.getElementById('netGroupTitle').textContent = currentGroup.name;
+      document.getElementById('netGroupBooks').textContent = currentGroup.books;
+      document.getElementById('netGroupMeta').textContent = currentGroup.meta;
+
+      const clearBtn = document.getElementById('clearNetSelectionBtn');
+      if (state.net.selectedEdge || state.net.selectedNode) {
+        clearBtn.classList.remove('hidden');
+      } else {
+        clearBtn.classList.add('hidden');
+      }
+
+      // 渲染交互式二分 SVG
+      const svgWrap = document.getElementById('bipartiteSvgContainer');
+      svgWrap.innerHTML = buildBipartiteSvg(currentGroup, {
+        mode: state.net.mode,
+        interactive: true,
+        selectedEdge: state.net.selectedEdge,
+        selectedNode: state.net.selectedNode
+      });
+
+      // 绑定 SVG 连线点击
+      svgWrap.querySelectorAll('.net-edge-hit').forEach(line => {
+        line.addEventListener('click', () => {
+          const c = line.dataset.center;
+          const n = line.dataset.neighbor;
+          const found = activeEdges.find(e => e[0] === c && e[1] === n);
+          if (found) {
+            state.net.selectedEdge = { center: found[0], neighbor: found[1], left: found[2], right: found[3], total: found[4] };
+            state.net.selectedNode = null;
+            renderNetworkModule();
+          }
+        });
+      });
+
+      // 绑定 SVG 节点点击
+      svgWrap.querySelectorAll('.net-node').forEach(node => {
+        node.addEventListener('click', () => {
+          const side = node.dataset.side;
+          const char = node.dataset.char;
+          state.net.selectedNode = { side, char };
+          state.net.selectedEdge = null;
+          renderNetworkModule();
+        });
+      });
+
+      renderEdgeInspector(currentGroup, activeEdges);
+      renderEdgeTable(activeEdges);
+    }
+
+    function renderEdgeInspector(group, activeEdges) {
+      const el = document.getElementById('edgeInspectorCard');
+
+      // 默认展示第一条最高频边
+      let edgeToShow = state.net.selectedEdge;
+      let nodeSummaryHTML = '';
+
+      if (!edgeToShow && state.net.selectedNode) {
+        const { side, char } = state.net.selectedNode;
+        const related = activeEdges.filter(e => (side === 'center' ? e[0] === char : e[1] === char));
+        if (related.length > 0) {
+          const top = related[0];
+          edgeToShow = { center: top[0], neighbor: top[1], left: top[2], right: top[3], total: top[4] };
+          nodeSummaryHTML = `
+            <div class="mb-3 px-3 py-2 rounded-xl bg-indigoInk/[0.06] border border-indigoInk/15 text-xs text-indigoInk">
+              已聚焦${side === 'center' ? '中心涉水字' : '共现邻字'} <strong class="font-serifSC text-sm">「${escapeHtml(char)}」</strong>，当前视图共有 <strong>${related.length}</strong> 条关联共现边（以下展示其最高频连线）：
+            </div>`;
+        }
+      }
+
+      if (!edgeToShow && activeEdges.length > 0) {
+        const top = activeEdges[0];
+        edgeToShow = { center: top[0], neighbor: top[1], left: top[2], right: top[3], total: top[4] };
+      }
+
+      if (!edgeToShow) {
+        el.innerHTML = `<div class="text-sm text-slate-400 py-8 text-center">点击网络中的节点或连线查看详情</div>`;
+        return;
+      }
+
+      const sumLR = (edgeToShow.left + edgeToShow.right) || 1;
+      const leftPct = Math.round((edgeToShow.left / sumLR) * 100);
+      const rightPct = 100 - leftPct;
+
+      el.innerHTML = `
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-semibold uppercase tracking-wider text-cinnabar">共现边详情面板</span>
+          <span class="text-[11px] text-slate-500">窗口：前后 5 个正文汉字</span>
+        </div>
+
+        ${nodeSummaryHTML}
+
+        <div class="flex items-center justify-between gap-3 p-4 rounded-2xl bg-paper border border-softBorder">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-2xl bg-indigoInk text-white font-serifSC font-bold text-2xl flex items-center justify-center shadow-sm">
+              ${escapeHtml(edgeToShow.center)}
+            </div>
+            <div class="text-slate-400 font-bold text-lg">↔</div>
+            <div class="w-12 h-12 rounded-2xl bg-white border-2 border-deepInk/80 text-deepInk font-serifSC font-bold text-2xl flex items-center justify-center shadow-xs">
+              ${escapeHtml(edgeToShow.neighbor)}
+            </div>
+          </div>
+          <div class="text-right tabular-nums">
+            <div class="text-[11px] text-slate-500">核心共现总计</div>
+            <div class="font-serifSC text-3xl font-bold text-cinnabar leading-none mt-1">
+              ${edgeToShow.total}<span class="text-xs font-sansSC text-slate-500 ml-1">次</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 左右共现分布条 -->
+        <div class="mt-4 space-y-2 tabular-nums">
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-indigoInk font-medium">左侧共现（邻字在左）：<strong>${edgeToShow.left}</strong> 次 (${leftPct}%)</span>
+            <span class="text-cinnabar font-medium">右侧共现（邻字在右）：<strong>${edgeToShow.right}</strong> 次 (${rightPct}%)</span>
+          </div>
+          <div class="w-full h-3 rounded-full bg-warmMuted overflow-hidden flex border border-softBorder">
+            <div class="bg-indigoInk h-full transition-all duration-300" style="width:${leftPct}%"></div>
+            <div class="bg-cinnabar h-full transition-all duration-300" style="width:${rightPct}%"></div>
+          </div>
+          <p class="text-[11px] text-slate-500">
+            ${edgeToShow.left > edgeToShow.right * 1.6
+              ? `明显偏向左侧搭配（如「${escapeHtml(edgeToShow.neighbor)}…${escapeHtml(edgeToShow.center)}」结构占主导）。`
+              : edgeToShow.right > edgeToShow.left * 1.6
+              ? `明显偏向右侧搭配（如「${escapeHtml(edgeToShow.center)}…${escapeHtml(edgeToShow.neighbor)}」结构占主导）。`
+              : `左右分布相对均衡，中心字前后语境均有高频共现。`}
+          </p>
+        </div>
+
+        <!-- 一键跳转原文模块 -->
+        <div class="mt-4 pt-3 border-t border-softBorder flex flex-wrap gap-2">
+          <button type="button" onclick="jumpToCorpusWithChar('${escapeHtml(edgeToShow.center)}')"
+            class="flex-1 inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-indigoInk hover:bg-indigoLight text-white text-xs font-medium shadow-xs transition-all">
+            <span>在原文模块查看含“${escapeHtml(edgeToShow.center)}”字的段落</span>
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+            </svg>
+          </button>
+          <button type="button" onclick="jumpToCorpusWithChar('${escapeHtml(edgeToShow.neighbor)}')"
+            class="px-3 py-2.5 rounded-xl bg-paper hover:bg-warmMuted border border-softBorder text-xs font-medium text-deepInk transition-colors">
+            查邻字“${escapeHtml(edgeToShow.neighbor)}”
+          </button>
+        </div>
+      `;
+    }
+
+    function renderEdgeTable(activeEdges) {
+      const tbody = document.getElementById('edgeTableBody');
+      document.getElementById('edgeTableCount').textContent = `共 ${activeEdges.length} 条边`;
+
+      tbody.innerHTML = activeEdges.map(e => {
+        const [c, n, l, r, t] = e;
+        const isSelected = state.net.selectedEdge
+          && state.net.selectedEdge.center === c
+          && state.net.selectedEdge.neighbor === n;
+
+        return `
+          <tr data-c="${escapeHtml(c)}" data-n="${escapeHtml(n)}"
+            class="edge-row cursor-pointer transition-colors hover:bg-paper ${isSelected ? 'bg-indigoInk/10 font-semibold' : ''}">
+            <td class="py-2 px-3 font-serifSC font-bold text-indigoInk">${escapeHtml(c)}</td>
+            <td class="py-2 px-2 font-serifSC text-deepInk">${escapeHtml(n)}</td>
+            <td class="py-2 px-2 text-right text-slate-600">${l}</td>
+            <td class="py-2 px-2 text-right text-slate-600">${r}</td>
+            <td class="py-2 px-3 text-right font-semibold text-cinnabar">${t}</td>
+          </tr>`;
+      }).join('');
+
+      tbody.querySelectorAll('.edge-row').forEach(tr => {
+        tr.addEventListener('click', () => {
+          const c = tr.dataset.c;
+          const n = tr.dataset.n;
+          const found = activeEdges.find(e => e[0] === c && e[1] === n);
+          if (found) {
+            state.net.selectedEdge = { center: found[0], neighbor: found[1], left: found[2], right: found[3], total: found[4] };
+            state.net.selectedNode = null;
+            renderNetworkModule();
+          }
+        });
+      });
+    }
+
+    function renderNetworkGallery(groups) {
+      document.getElementById('galleryTitle').textContent = state.net.dim === 'school'
+        ? '涉水字与邻字的共现 ｜ 按学派分组（复刻学派核心网络图）'
+        : '涉水字与邻字的共现 ｜ 按时期分组（复刻时期核心网络图）';
+
+      const grid = document.getElementById('networkGalleryGrid');
+      grid.innerHTML = groups.map((g, idx) => `
+        <div data-gallery-idx="${idx}"
+          class="gallery-card group rounded-2xl bg-paper/70 border border-softBorder hover:border-indigoInk p-4 sm:p-5 transition-all cursor-pointer hover:shadow-scholarHover">
+          <div class="flex items-start justify-between gap-2 mb-2">
+            <div>
+              <h4 class="font-serifSC text-lg font-bold text-deepInk group-hover:text-indigoInk transition-colors">${escapeHtml(g.name)}</h4>
+              <div class="text-xs text-slate-600">${escapeHtml(g.books)}</div>
+              <div class="text-[11px] text-slate-500 mt-0.5 tabular-nums">${escapeHtml(g.meta)}</div>
+            </div>
+            <span class="px-2 py-1 rounded-lg bg-white border border-softBorder text-[11px] text-indigoInk group-hover:bg-indigoInk group-hover:text-white transition-colors">
+              交互深探 →
+            </span>
+          </div>
+          <div class="mt-2">
+            ${buildBipartiteSvg(g, { mode: 'core', interactive: false, width: 440, minHeight: 230 })}
+          </div>
+        </div>`).join('');
+
+      grid.querySelectorAll('.gallery-card').forEach(card => {
+        card.addEventListener('click', () => {
+          state.net.groupIndex = Number(card.dataset.galleryIdx);
+          state.net.mode = 'core';
+          state.net.selectedEdge = null;
+          state.net.selectedNode = null;
+          renderNetworkModule();
+        });
+      });
+    }
+
+    /* =====================================================================
+       七、模块四：组员分析解读渲染与轻量编辑
+       ===================================================================== */
+
+    function renderFindingsModule() {
+      const grid = document.getElementById('findingsGrid');
+      const accentMap = {
+        indigo: { badge: 'bg-indigoInk/10 text-indigoInk', border: 'border-t-indigoInk' },
+        cinnabar: { badge: 'bg-cinnabar/10 text-cinnabar', border: 'border-t-cinnabar' },
+        slate: { badge: 'bg-slateMist/15 text-slateMist', border: 'border-t-slateMist' }
+      };
+
+      grid.innerHTML = state.findings.map((f, idx) => {
+        const st = accentMap[f.accent] || accentMap.indigo;
+        if (state.editingFindings) {
+          return `
+            <div class="rounded-2xl bg-card border border-softBorder border-t-4 ${st.border} shadow-scholar p-5 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold ${st.badge}">${escapeHtml(f.tag)}</span>
+                <span class="text-[11px] text-cinnabar font-medium">编辑模式</span>
+              </div>
+              <input type="text" data-edit-title="${idx}" value="${escapeHtml(f.title)}"
+                class="w-full rounded-xl border border-softBorder bg-paper px-3 py-2 font-serifSC font-bold text-base text-deepInk focus:outline-none focus:ring-2 focus:ring-indigoInk/30" />
+              <textarea rows="4" data-edit-body="${idx}"
+                class="w-full rounded-xl border border-softBorder bg-paper px-3 py-2 text-sm text-slate-700 leading-relaxed focus:outline-none focus:ring-2 focus:ring-indigoInk/30">${escapeHtml(f.body)}</textarea>
+            </div>`;
+        }
+        return `
+          <article class="rounded-2xl bg-card border border-softBorder border-t-4 ${st.border} shadow-scholar p-5 sm:p-6 hover:shadow-scholarHover transition-shadow">
+            <span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold ${st.badge}">
+              ${escapeHtml(f.tag)}
+            </span>
+            <h3 class="mt-3 font-serifSC font-bold text-lg text-deepInk leading-snug">
+              ${escapeHtml(f.title)}
+            </h3>
+            <p class="mt-2.5 text-sm text-slate-600 leading-relaxed">
+              ${escapeHtml(f.body)}
+            </p>
+          </article>`;
+      }).join('');
+
+      document.getElementById('editBtnLabel').textContent = state.editingFindings ? '保存组员解读修改' : '编辑 / 补充组员解读';
+      document.getElementById('resetFindingsBtn').classList.toggle('hidden', !state.editingFindings);
+    }
+
+    /* =====================================================================
+       八、本地 CSV 实时解析与数据替换引擎
+       ===================================================================== */
+
+    function updateCsvStatusBadge(id, text, isLoaded) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const span = el.querySelector('span:last-child');
+      span.textContent = text;
+      span.className = isLoaded ? 'text-emerald-700 font-semibold' : 'text-slate-500';
+    }
+
+    function mergeImportedParagraphsAndCases() {
+      const rawParas = state.importedRawParagraphs;
+      const rawCases = state.importedRawCases;
+
+      // 以段落表为主表，若未导段落表则以当前段落为基础
+      const baseParas = rawParas
+        ? rawParas.map(r => ({
+            id: r['段落编号'] || r['id'] || '',
+            书名: r['书名'] || '',
+            篇名: r['篇名'] || '',
+            学派: r['学派'] || '',
+            时期: r['时期'] || '',
+            正文: r['正文'] || '',
+            用例: []
+          })).filter(p => p.id)
+        : state.paragraphs.map(p => ({ ...p, 用例: rawCases ? [] : p.用例 }));
+
+      if (rawCases) {
+        const map = new Map();
+        baseParas.forEach(p => map.set(p.id, p));
+        rawCases.forEach(r => {
+          const pid = r['段落编号'] || r['id'] || '';
+          if (!map.has(pid)) return;
+          map.get(pid).用例.push({
+            目标字: r['目标字'] || r['候选字'] || '',
+            统计类别: r['统计类别'] || '',
+            语义类别: r['语义类别'] || '',
+            理由: r['理由'] || r['判读理由'] || '',
+            计入核心: Number(r['计入核心']) || 0,
+            计入自然水象: Number(r['计入自然水象']) || 0,
+            计入含五行: Number(r['计入含五行']) || 0,
+            段内汉字位: Number(r['段内汉字位']) || 0
+          });
+        });
+      }
+
+      state.paragraphs = baseParas;
+      state.corpus.selectedId = baseParas[0] ? baseParas[0].id : null;
+      state.corpus.visibleLimit = 50;
+      populateCorpusFilterOptions();
+      renderCorpusModule();
+      recalcKPIsFromImported();
+    }
+
+    function recalcKPIsFromImported() {
+      // 如果导入了完整段落表/逐书频率表，同步刷新顶部 KPI
+      if (state.importedRawParagraphs && state.importedRawParagraphs.length > 20) {
+        document.getElementById('kpiParagraphs').textContent = state.importedRawParagraphs.length.toLocaleString();
+      }
+      if (state.importedRawCases && state.importedRawCases.length > 60) {
+        const total = state.importedRawCases.length;
+        const core = state.importedRawCases.filter(r => Number(r['计入核心']) === 1).length;
+        const nature = state.importedRawCases.filter(r => Number(r['计入自然水象']) === 1).length;
+        const wuxing = state.importedRawCases.filter(r => Number(r['计入含五行']) === 1).length;
+        document.getElementById('kpiCandidates').textContent = total.toLocaleString();
+        document.getElementById('kpiCore').textContent = core.toLocaleString();
+        document.getElementById('kpiNature').textContent = nature.toLocaleString();
+        document.getElementById('kpiWuxing').textContent = wuxing.toLocaleString();
+      }
+    }
+
+    function ingestBookFreqCSV(rows) {
+      const mapped = rows.map(r => {
+        const toNum = (keys, fallback = 0) => {
+          for (const k of keys) {
+            if (r[k] !== undefined && r[k] !== '') {
+              const v = parseFloat(String(r[k]).replace(/[%,\s]/g, ''));
+              if (!isNaN(v)) return v;
+            }
+          }
+          return fallback;
+        };
+        const bookName = r['书名'] || r['典籍'] || '';
+        const builtMatch = BUILT_IN_BOOK_FREQ.find(b => b.书名 === bookName);
+        return {
+          书名: bookName,
+          学派: r['学派'] || (builtMatch ? builtMatch.学派 : ''),
+          时期: r['时期'] || (builtMatch ? builtMatch.时期 : ''),
+          段落数: toNum(['段落数'], builtMatch ? builtMatch.段落数 : 0),
+          正文汉字数: toNum(['正文汉字数', '正文总字数', '字数'], builtMatch ? builtMatch.正文汉字数 : 0),
+          候选总次数: toNum(['候选总次数', '候选次数', '候选字位数'], builtMatch ? builtMatch.候选总次数 : 0),
+          核心次数: toNum(['核心次数', '核心例数', '计入核心'], builtMatch ? builtMatch.核心次数 : 0),
+          自然水象: toNum(['自然水象', '自然水象次数', '计入自然水象'], builtMatch ? builtMatch.自然水象 : 0),
+          含五行: toNum(['含五行', '含五行次数', '计入含五行'], builtMatch ? builtMatch.含五行 : 0),
+          核心每万字: toNum(['核心每万字', '核心每万字频次', '核心频率'], builtMatch ? builtMatch.核心每万字 : 0),
+          自然水象每万字: toNum(['自然水象每万字', '自然水象每万字频次', '自然水象频率'], builtMatch ? builtMatch.自然水象每万字 : 0),
+          含五行每万字: toNum(['含五行每万字', '含五行每万字频次', '含五行频率'], builtMatch ? builtMatch.含五行每万字 : 0),
+          核心入选率: toNum(['核心入选率', '入选率'], builtMatch ? builtMatch.核心入选率 : 0),
+          语义分布: {
+            水域: toNum(['水域'], builtMatch ? builtMatch.语义分布.水域 : 0),
+            水物: toNum(['水物'], builtMatch ? builtMatch.语义分布.水物 : 0),
+            涉水动作: toNum(['涉水动作'], builtMatch ? builtMatch.语义分布.涉水动作 : 0),
+            水体运动: toNum(['水体运动'], builtMatch ? builtMatch.语义分布.水体运动 : 0),
+            水域设施: toNum(['水域设施'], builtMatch ? builtMatch.语义分布.水域设施 : 0)
+          },
+          高频核心字: r['高频核心字'] || (builtMatch ? builtMatch.高频核心字 : '—')
+        };
+      }).filter(b => b.书名);
+
+      if (mapped.length > 0) {
+        state.bookFreq = mapped;
+        renderBookFreqCharts();
+        renderBookFreqTable();
+        updateCsvStatusBadge('status-freq', `已导入 (${mapped.length} 书)`, true);
+      }
+    }
+
+    function ingestEdgesCSV(rows) {
+      // 自动按分组维度/分组名称聚合共现边表
+      const schoolMap = new Map();
+      const periodMap = new Map();
+
+      rows.forEach(r => {
+        const dim = r['分组维度'] || r['维度'] || '';
+        const grp = r['分组'] || r['分组名'] || r['学派'] || r['时期'] || '';
+        const center = r['中心字'] || r['目标字'] || '';
+        const neighbor = r['邻字'] || r['共现字'] || '';
+        const left = Number(r['核心左侧'] ?? r['左侧'] ?? r['左共现'] ?? 0) || 0;
+        const right = Number(r['核心右侧'] ?? r['右侧'] ?? r['右共现'] ?? 0) || 0;
+        const total = Number(r['核心总计'] ?? r['核心次数'] ?? r['总计'] ?? r['共现次数'] ?? (left + right)) || 0;
+        if (!grp || !center || !neighbor || total <= 0) return;
+
+        const targetMap = (dim.includes('时期') || ['春秋末至战国初', '战国中期', '战国末', '西汉'].some(p => grp.includes(p)))
+          ? periodMap : schoolMap;
+
+        if (!targetMap.has(grp)) targetMap.set(grp, []);
+        targetMap.get(grp).push([center, neighbor, left, right, total]);
+      });
+
+      const buildGroupList = (map, builtList) => {
+        if (map.size === 0) return builtList;
+        return [...map.entries()].map(([name, edges]) => {
+          edges.sort((a, b) => b[4] - a[4]);
+          const builtMatch = builtList.find(g => g.name === name);
+          const centers = [...new Set(edges.map(e => e[0]))].slice(0, 3);
+          return {
+            name,
+            books: builtMatch ? builtMatch.books : '本地导入分组',
+            meta: builtMatch ? builtMatch.meta : `共 ${edges.length} 条核心共现边`,
+            centerCounts: builtMatch ? builtMatch.centerCounts : {},
+            coreTop3Centers: builtMatch ? builtMatch.coreTop3Centers : centers,
+            coreEdges: edges.filter(e => centers.includes(e[0])).slice(0, 9),
+            edges: edges.slice(0, 20)
+          };
+        });
+      };
+
+      state.network.school = buildGroupList(schoolMap, state.network.school);
+      state.network.period = buildGroupList(periodMap, state.network.period);
+      state.net.selectedEdge = null;
+      state.net.selectedNode = null;
+      renderNetworkModule();
+      updateCsvStatusBadge('status-edges', `已导入 (${rows.length} 条边)`, true);
+    }
+
+    async function handleCsvFiles(fileList) {
+      const files = Array.from(fileList || []);
+      if (files.length === 0) return;
+
+      let importedCount = 0;
+      for (const file of files) {
+        try {
+          const text = await file.text();
+          const rows = parseCSV(text);
+          if (rows.length === 0) {
+            showToast(`文件 ${file.name} 解析为空，请检查编码（需 UTF-8）`, 'warn');
+            continue;
+          }
+          const headers = Object.keys(rows[0]);
+          const name = file.name;
+
+          if (name.includes('段落表') || (headers.includes('段落编号') && headers.includes('正文'))) {
+            state.importedRawParagraphs = rows;
+            updateCsvStatusBadge('status-paragraphs', `已导入 (${rows.length.toLocaleString()} 段)`, true);
+            mergeImportedParagraphsAndCases();
+            importedCount++;
+          } else if (name.includes('原文用例索引') || (headers.includes('段落编号') && (headers.includes('目标字') || headers.includes('计入核心')))) {
+            state.importedRawCases = rows;
+            updateCsvStatusBadge('status-cases', `已导入 (${rows.length.toLocaleString()} 例)`, true);
+            mergeImportedParagraphsAndCases();
+            importedCount++;
+          } else if (name.includes('逐书频率') || (headers.includes('书名') && (headers.some(h => h.includes('每万字') || h.includes('核心'))))) {
+            ingestBookFreqCSV(rows);
+            importedCount++;
+          } else if (name.includes('共现边表') || (headers.includes('中心字') && headers.includes('邻字'))) {
+            ingestEdgesCSV(rows);
+            importedCount++;
+          } else {
+            showToast(`无法自动识别 ${file.name} 的表结构，请确认列名符合教程规范`, 'warn');
+          }
+        } catch (err) {
+          showToast(`读取 ${file.name} 失败：${err.message}`, 'warn');
+        }
+      }
+
+      if (importedCount > 0) {
+        const badge = document.getElementById('dataSourceBadge');
+        badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>已载入本地 CSV`;
+        badge.className = 'hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-200';
+        showToast(`成功导入并实时渲染 ${importedCount} 份本地 CSV 数据表！`, 'success');
+      }
+    }
+
+    function restoreAllBuiltInData() {
+      state.paragraphs = structuredClone(BUILT_IN_PARAGRAPHS);
+      state.bookFreq = structuredClone(BUILT_IN_BOOK_FREQ);
+      state.network = structuredClone(BUILT_IN_NETWORK);
+      state.importedRawParagraphs = null;
+      state.importedRawCases = null;
+      state.corpus.selectedId = BUILT_IN_PARAGRAPHS[0].id;
+      state.corpus.activeCaseIdx = null;
+      state.net.groupIndex = 0;
+      state.net.selectedEdge = null;
+      state.net.selectedNode = null;
+
+      document.getElementById('kpiParagraphs').textContent = '2,487';
+      document.getElementById('kpiCandidates').textContent = '3,170';
+      document.getElementById('kpiCore').textContent = '988';
+      document.getElementById('kpiNature').textContent = '1,207';
+      document.getElementById('kpiWuxing').textContent = '1,265';
+
+      updateCsvStatusBadge('status-paragraphs', '内置样本 (16 段)', false);
+      updateCsvStatusBadge('status-cases', '内置样本 (56 例)', false);
+      updateCsvStatusBadge('status-freq', '内置完整数据 (7 书)', false);
+      updateCsvStatusBadge('status-edges', '内置完整网络 (8 组)', false);
+
+      const badge = document.getElementById('dataSourceBadge');
+      badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-indigoInk"></span>内置真实样本`;
+      badge.className = 'hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-indigoInk/10 text-indigoInk border border-indigoInk/20';
+
+      populateCorpusFilterOptions();
+      renderCorpusModule();
+      renderBookFreqCharts();
+      renderBookFreqTable();
+      renderNetworkModule();
+      showToast('已恢复全部内置真实样本与完整统计数据', 'info');
+    }
+
+    /* =====================================================================
+       九、事件绑定与页面初始化
+       ===================================================================== */
+
+    function bindEvents() {
+      // 模块一筛选事件
+      document.getElementById('filterBook').addEventListener('change', e => {
+        state.corpus.book = e.target.value;
+        state.corpus.visibleLimit = 50;
+        renderCorpusModule();
+      });
+      document.getElementById('filterSchool').addEventListener('change', e => {
+        state.corpus.school = e.target.value;
+        state.corpus.visibleLimit = 50;
+        renderCorpusModule();
+      });
+      document.getElementById('filterPeriod').addEventListener('change', e => {
+        state.corpus.period = e.target.value;
+        state.corpus.visibleLimit = 50;
+        renderCorpusModule();
+      });
+      document.getElementById('filterKeyword').addEventListener('input', e => {
+        state.corpus.keyword = e.target.value;
+        state.corpus.visibleLimit = 50;
+        document.getElementById('clearKeywordBtn').classList.toggle('hidden', !e.target.value);
+        renderCorpusModule();
+      });
+      document.getElementById('clearKeywordBtn').addEventListener('click', () => {
+        state.corpus.keyword = '';
+        document.getElementById('filterKeyword').value = '';
+        document.getElementById('clearKeywordBtn').classList.add('hidden');
+        renderCorpusModule();
+      });
+      document.getElementById('coreOnlyToggle').addEventListener('change', e => {
+        state.corpus.coreOnly = e.target.checked;
+        state.corpus.activeCaseIdx = null;
+        renderCorpusModule();
+        showToast(e.target.checked ? '已开启：仅展示计入核心统计（计入核心 = 1）' : '已关闭核心筛选：展示全部候选字与排除理由', 'info');
+      });
+      document.getElementById('resetCorpusFiltersBtn').addEventListener('click', () => {
+        state.corpus.book = '全部';
+        state.corpus.school = '全部';
+        state.corpus.period = '全部';
+        state.corpus.keyword = '';
+        state.corpus.coreOnly = false;
+        state.corpus.activeCaseIdx = null;
+        state.corpus.visibleLimit = 50;
+        document.getElementById('filterBook').value = '全部';
+        document.getElementById('filterSchool').value = '全部';
+        document.getElementById('filterPeriod').value = '全部';
+        document.getElementById('filterKeyword').value = '';
+        document.getElementById('clearKeywordBtn').classList.add('hidden');
+        document.getElementById('coreOnlyToggle').checked = false;
+        renderCorpusModule();
+      });
+      document.getElementById('loadMoreBtn').addEventListener('click', () => {
+        state.corpus.visibleLimit += 60;
+        renderCorpusModule();
+      });
+
+      // 模块二图表口径切换
+      document.querySelectorAll('.freq-toggle').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const m = btn.dataset.metric;
+          const activeCount = Object.values(state.freq.metrics).filter(Boolean).length;
+          if (state.freq.metrics[m] && activeCount === 1) {
+            showToast('请至少保留一个统计口径用于对比', 'warn');
+            return;
+          }
+          state.freq.metrics[m] = !state.freq.metrics[m];
+          const colorCls = m === 'core' ? ['bg-indigoInk', 'text-white', 'border-indigoInk']
+            : m === 'nature' ? ['bg-cinnabar', 'text-white', 'border-cinnabar']
+            : ['bg-slateMist', 'text-white', 'border-slateMist'];
+
+          if (state.freq.metrics[m]) {
+            btn.classList.remove('bg-paper', 'text-slate-500', 'border-softBorder');
+            btn.classList.add(...colorCls);
+          } else {
+            btn.classList.remove(...colorCls);
+            btn.classList.add('bg-paper', 'text-slate-500', 'border-softBorder');
+          }
+          renderBookFreqCharts();
+        });
+      });
+
+      // 语义图例数 / 占比切换
+      document.getElementById('semModeCount').addEventListener('click', () => {
+        state.freq.semMode = 'count';
+        document.getElementById('semModeCount').className = 'px-2.5 py-1 rounded-md text-xs font-medium bg-indigoInk text-white transition-colors';
+        document.getElementById('semModePct').className = 'px-2.5 py-1 rounded-md text-xs font-medium text-slate-600 hover:text-indigoInk transition-colors';
+        renderBookFreqCharts();
+      });
+      document.getElementById('semModePct').addEventListener('click', () => {
+        state.freq.semMode = 'pct';
+        document.getElementById('semModePct').className = 'px-2.5 py-1 rounded-md text-xs font-medium bg-indigoInk text-white transition-colors';
+        document.getElementById('semModeCount').className = 'px-2.5 py-1 rounded-md text-xs font-medium text-slate-600 hover:text-indigoInk transition-colors';
+        renderBookFreqCharts();
+      });
+
+      // 表格列排序
+      document.querySelectorAll('th[data-sort]').forEach(th => {
+        th.addEventListener('click', () => {
+          const key = th.dataset.sort;
+          if (state.freq.sortKey === key) {
+            state.freq.sortDir = state.freq.sortDir === 'desc' ? 'asc' : 'desc';
+          } else {
+            state.freq.sortKey = key;
+            state.freq.sortDir = 'desc';
+          }
+          renderBookFreqTable();
+        });
+      });
+
+      // 模块三网络维度与模式切换
+      document.getElementById('dimSchoolBtn').addEventListener('click', () => {
+        state.net.dim = 'school';
+        state.net.groupIndex = 0;
+        state.net.selectedEdge = null;
+        state.net.selectedNode = null;
+        renderNetworkModule();
+      });
+      document.getElementById('dimPeriodBtn').addEventListener('click', () => {
+        state.net.dim = 'period';
+        state.net.groupIndex = 0;
+        state.net.selectedEdge = null;
+        state.net.selectedNode = null;
+        renderNetworkModule();
+      });
+      document.getElementById('netModeCoreBtn').addEventListener('click', () => {
+        state.net.mode = 'core';
+        state.net.selectedEdge = null;
+        state.net.selectedNode = null;
+        renderNetworkModule();
+      });
+      document.getElementById('netModeFullBtn').addEventListener('click', () => {
+        state.net.mode = 'full';
+        state.net.selectedEdge = null;
+        state.net.selectedNode = null;
+        renderNetworkModule();
+      });
+      document.getElementById('netModeGalleryBtn').addEventListener('click', () => {
+        state.net.mode = 'gallery';
+        renderNetworkModule();
+      });
+      document.getElementById('clearNetSelectionBtn').addEventListener('click', () => {
+        state.net.selectedEdge = null;
+        state.net.selectedNode = null;
+        renderNetworkModule();
+      });
+
+      // 模块四研究发现编辑切换
+      document.getElementById('toggleEditFindingsBtn').addEventListener('click', () => {
+        if (state.editingFindings) {
+          // 保存修改
+          document.querySelectorAll('[data-edit-title]').forEach(inp => {
+            const idx = Number(inp.dataset.editTitle);
+            state.findings[idx].title = inp.value.trim() || DEFAULT_FINDINGS[idx].title;
+          });
+          document.querySelectorAll('[data-edit-body]').forEach(ta => {
+            const idx = Number(ta.dataset.editBody);
+            state.findings[idx].body = ta.value.trim() || DEFAULT_FINDINGS[idx].body;
+          });
+          try {
+            localStorage.setItem('water_dh_findings_v1', JSON.stringify(state.findings));
+          } catch (e) {}
+          state.editingFindings = false;
+          renderFindingsModule();
+          showToast('组员分析解读已保存（保存在本地浏览器）', 'success');
+        } else {
+          state.editingFindings = true;
+          renderFindingsModule();
+        }
+      });
+
+      document.getElementById('resetFindingsBtn').addEventListener('click', () => {
+        state.findings = structuredClone(DEFAULT_FINDINGS);
+        try { localStorage.removeItem('water_dh_findings_v1'); } catch (e) {}
+        state.editingFindings = false;
+        renderFindingsModule();
+        showToast('已恢复默认组员分析解读文案', 'info');
+      });
+
+      // CSV 弹窗交互
+      const modal = document.getElementById('csvModal');
+      const openModal = () => { modal.classList.remove('hidden'); modal.classList.add('flex'); };
+      const closeModal = () => { modal.classList.add('hidden'); modal.classList.remove('flex'); };
+
+      document.getElementById('openCsvModalBtn').addEventListener('click', openModal);
+      document.getElementById('closeCsvModalBtn').addEventListener('click', closeModal);
+      document.getElementById('confirmCsvModalBtn').addEventListener('click', closeModal);
+      modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+
+      const dropZone = document.getElementById('csvDropZone');
+      const fileInput = document.getElementById('csvFileInput');
+      dropZone.addEventListener('click', () => fileInput.click());
+      fileInput.addEventListener('change', e => {
+        handleCsvFiles(e.target.files);
+        fileInput.value = '';
+      });
+      dropZone.addEventListener('dragover', e => {
+        e.preventDefault();
+        dropZone.classList.add('border-indigoInk', 'bg-indigoInk/[0.06]');
+      });
+      dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('border-indigoInk', 'bg-indigoInk/[0.06]');
+      });
+      dropZone.addEventListener('drop', e => {
+        e.preventDefault();
+        dropZone.classList.remove('border-indigoInk', 'bg-indigoInk/[0.06]');
+        handleCsvFiles(e.dataTransfer.files);
+      });
+      document.getElementById('restoreBuiltInBtn').addEventListener('click', restoreAllBuiltInData);
+    }
+
+    // 页面加载完成后启动初始化
+    window.addEventListener('DOMContentLoaded', () => {
+      try {
+        populateCorpusFilterOptions();
+        renderCorpusModule();
+        renderBookFreqCharts();
+        renderBookFreqTable();
+        renderNetworkModule();
+        renderFindingsModule();
+        bindEvents();
+      } catch (err) {
+        console.error('初始化异常:', err);
+        showToast('页面部分组件初始化遇到问题，请刷新重试', 'warn');
+      }
+    });
+  </script>
+</body>
+</html>
